@@ -71,4 +71,4 @@ AutoDeals is a web-based used car marketplace designed to facilitate seamless bu
 
 ---
 
-Well that was my schedule for my CapStone project hope you like it!
+
