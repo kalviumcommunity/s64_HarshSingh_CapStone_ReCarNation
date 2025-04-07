@@ -4,7 +4,7 @@ AutoDeals is a web-based used car marketplace designed to facilitate seamless bu
 
 ---
 
-### 🚀 **AutoDeals – Key Features**
+### 🚀 **ReCarNation – Key Features**
 
 - **User Auth**: Email/password login, Google OAuth, JWT, role-based access (Admin, Buyer, Seller)  
 - **Car Listings**: Sellers can add, edit, delete listings with images and full car details  
