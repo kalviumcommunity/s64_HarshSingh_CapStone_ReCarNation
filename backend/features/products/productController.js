@@ -1,6 +1,6 @@
 const Product = require('../../model/productsModel')
 
-class productContoller{
+class ProductContoller{
     static async createProduct(req, res){
         try{
             const product = new Product(req.body);
@@ -23,5 +23,25 @@ class productContoller{
             res.status(500).json({error: error.message});
         }
     }
+    static async updateProduct(req, res){
+        try{
+           const {id} = req.params;
+           const updatedProduct = await Product.findById(id, req.body, {
+            new : true,
+            runValidators: true
+           });
+
+           if(!updatedProduct) {
+            res.status(404).json({message: 'Product not found!'})
+           }
+           res.status(200).json({message: 'Updated product!'})
+        }
+        catch(error){
+            res.status(500).json({
+                message : "Error while updating the product",
+                error : error.message
+            });
+        }
+    }
 }
-module.exports = productContoller;
+module.exports = ProductContoller;
