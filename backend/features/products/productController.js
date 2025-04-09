@@ -1,6 +1,6 @@
 const Product = require('../../model/productsModel')
 
-class ProductContoller{
+class productContoller{
     static async createProduct(req, res){
         try{
             const product = new Product(req.body);
@@ -24,4 +24,4 @@ class ProductContoller{
         }
     }
 }
-module.exports = ProductContoller;
+module.exports = productContoller;
