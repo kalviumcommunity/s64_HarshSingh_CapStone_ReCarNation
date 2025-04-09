@@ -5,11 +5,11 @@ const connectDB = require('./db/database');
 app.use(express.json());
 
 const productRoutes = require('./features/products/productsRoutes');
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 6000;
 connectDB();
 
 app.use('/api/products', productRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port http://localhost:${PORT}`);
 });
