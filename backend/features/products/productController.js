@@ -1,12 +1,12 @@
 const Product = require('../../model/productsModel')
 
-class ProductContoller{
+class ProductContorller{
     static async createProduct(req, res){
         try{
             const {name, company, model, year, description, KilometersTraveled} = req.body;
 
             if(!name || !company || !model || !year){
-                res.status(404).json({message: "All fields are required."})
+               return res.status(404).json({message: "All fields are required."})
             }
 
             const product = new Product({ name, company, model, year, description, KilometersTraveled });
@@ -18,7 +18,7 @@ class ProductContoller{
             res.status(400).json({error : error.message});
         }
     }
-    static async getAllProduct(req, res){
+    static async getAllProducts(req, res){
         try{
             const products = await Product.find();
             res.status(200).json({
@@ -33,15 +33,18 @@ class ProductContoller{
     static async updateProduct(req, res){
         try{
            const {id} = req.params;
-           const updatedProduct = await Product.findById(id, req.body, {
+           const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
             new : true,
             runValidators: true
            });
 
            if(!updatedProduct) {
-            res.status(404).json({message: 'Product not found!'})
+            res.status(400).json({message: 'Product not found!'})
            }
-           res.status(200).json({message: 'Updated product!'})
+           res.status(200).json({
+            message: 'Updated product!',
+            product: updatedProduct
+        });        
         }
         catch(error){
             res.status(500).json({
@@ -51,4 +54,4 @@ class ProductContoller{
         }
     }
 }
-module.exports = ProductContoller;
+module.exports = ProductContorller;
