@@ -42,7 +42,7 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.getAllEmails = async (req, res) => {
+exports.getAllEmails = async(req, res) => {
     try {
       const users = await User.find({}, "name email"); // Fetch name and email only
       const userList = users.map(user => ({
@@ -55,6 +55,24 @@ exports.getAllEmails = async (req, res) => {
       res.status(500).send("Error fetching users");
     }
   };
+
+exports.profile = async(req, res)=>{
+    try{
+        const userProfile = await User.findById();
+        if(!userProfile) return res.status(404).json({message:"No such user exist!"});
+
+        res.status(200).json({
+            message:"User profile",
+            userProfile
+        });
+    }
+    catch(error){
+        res.status(400).json({
+            message: "Error",
+            error
+        })
+    }
+}
 
 // Protected profile route
 exports.profile = (req, res) => {
