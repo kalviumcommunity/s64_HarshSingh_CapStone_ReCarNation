@@ -58,7 +58,8 @@ exports.getAllEmails = async(req, res) => {
 
 exports.profile = async(req, res)=>{
     try{
-        const userProfile = await User.findById();
+        const userid = req.user._id;
+        const userProfile = await User.findById(userid);
         if(!userProfile) return res.status(404).json({message:"No such user exist!"});
 
         res.status(200).json({
@@ -69,12 +70,33 @@ exports.profile = async(req, res)=>{
     catch(error){
         res.status(400).json({
             message: "Error",
-            error
-        })
+            error: error.message
+        });
     }
-}
-
-// Protected profile route
-exports.profile = (req, res) => {
-  res.send({ user: req.user });
 };
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const deletedUser = await User.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    res.status(200).json({
+      message: "User deleted successfully!",
+      user: {
+        id: deletedUser._id,
+        name: deletedUser.name,
+        email: deletedUser.email
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "Error",
+      error: error.message
+    });
+  }
+};
+
