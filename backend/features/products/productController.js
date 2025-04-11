@@ -3,7 +3,11 @@ const Product = require('../../model/productsModel')
 class ProductContoller{
     static async createProduct(req, res){
         try{
-            const product = new Product(req.body);
+            const {name, company, model, year, description, KilometersTraveled} = req.body;
+
+            if(!name || !company || !model || !year){
+                res.status(404).json({message: "All fields are required."})
+            }
             const savedProduct = await product.save();
             res.status(201).json(savedProduct);
         }
