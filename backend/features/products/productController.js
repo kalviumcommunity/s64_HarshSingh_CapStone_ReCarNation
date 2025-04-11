@@ -8,6 +8,9 @@ class ProductContoller{
             if(!name || !company || !model || !year){
                 res.status(404).json({message: "All fields are required."})
             }
+
+            const product = new Product({ name, company, model, year, description, KilometersTraveled });
+            
             const savedProduct = await product.save();
             res.status(201).json(savedProduct);
         }
