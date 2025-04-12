@@ -1,6 +1,6 @@
 const Product = require('../../model/productsModel')
 
-class ProductContorller{
+class ProductController{
     static async createProduct(req, res){
         try{
             const {name, company, model, year, description, KilometersTraveled} = req.body;
@@ -54,4 +54,4 @@ class ProductContorller{
         }
     }
 }
-module.exports = ProductContorller;
+module.exports = ProductController;
