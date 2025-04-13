@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const passport = require('passport')
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 
@@ -19,6 +20,7 @@ connectDB();
 
 app.use('/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/uploads', express.static('uploads'));
 
 app.get("/", (req, res)=>{
   res.send('Server is running');
