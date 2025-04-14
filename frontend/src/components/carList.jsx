@@ -1,10 +1,9 @@
-// src/pages/Home.jsx
+// src/components/CarList.jsx
 import React, { useEffect, useState } from 'react';
-import CarCard from '../components/carCard';
+import CarCard from './carCard';
 
-const Home = () => {
+const CarList = () => {
   const [cars, setCars] = useState([
-    // Sample car data for testing UI until backend is ready
     {
       _id: '1',
       title: '2017 Maruti Baleno',
@@ -15,7 +14,7 @@ const Home = () => {
       transmission: 'Manual',
       owner: '1st owner',
       price: '4.58',
-      image: 'https://example.com/baleno.png', // use actual image or test image link
+      image: 'https://example.com/baleno.png',
     },
   ]);
 
@@ -34,4 +33,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default CarList;
