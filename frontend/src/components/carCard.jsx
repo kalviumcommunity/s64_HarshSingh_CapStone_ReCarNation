@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Modal, Button, Card, Container, Row, Col } from 'react-bootstrap';
+import { Button, Card, Container, Row, Col } from 'react-bootstrap';
 
 const ProductCard = () => {
   const [products, setProducts] = useState([]);
@@ -21,7 +21,6 @@ const ProductCard = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
-
   const handleShowModal = (id) => {
     setDeletingProductId(id);
     setShowModal(true);
