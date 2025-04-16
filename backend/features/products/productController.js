@@ -17,7 +17,7 @@ class ProductController{
                  description,
                  KilometersTraveled,
                  listedBy: req.user._id,
-                 image: imagePath 
+                //  image: imagePath 
                 });
             
             const savedProduct = await product.save();

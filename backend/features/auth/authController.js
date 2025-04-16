@@ -4,14 +4,17 @@ const User = require("../../model/userModel"); // <-- Use Mongoose model
 const JWT_SECRET = process.env.JWT_SECRET;
 
 exports.signup = async (req, res) => {
-  const { name, email, password } = req.body;
+  let { name, email, password } = req.body;
   try {
-    email = email.trim().toLowerCase().replace(/\s+/g, '');
-    const existingUser = await User.findOne({ email });
+    const cleanedEmail = email.trim().toLowerCase().replace(/\s+/g, '');
+    const existingUser = await User.findOne({ email: cleanedEmail });
     if (existingUser) return res.status(409).json({ message: "User already exists" });
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashed });
-    res.status(201).json({ message: "User created", user: { id: user._id, name: user.name } });
+    const user = await User.create({ name, email: cleanedEmail, password: hashed });
+    res.status(201).json({ 
+      message: "User created", 
+      user: { id: user._id, name: user.name } 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");

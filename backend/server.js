@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const passport = require('passport')
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -8,6 +9,7 @@ const connectDB = require('./db/database');
 const authRoutes = require('./features/auth/authRoutes');
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use(session({ secret: "secret", resave: false, saveUninitialized: true}));
