@@ -5,25 +5,12 @@ import CarCard from '../components/carCard';
 const Home = () => {
   const [cars, setCars] = useState([
     // Sample car data for testing UI until backend is ready
-    {
-      _id: '1',
-      title: '2017 Maruti Baleno',
-      variant: 'DELTA PETROL',
-      location: 'Mansarovar, Jaipur',
-      kmDriven: '53.35k km',
-      fuelType: 'Petrol',
-      transmission: 'Manual',
-      owner: '1st owner',
-      price: '4.58',
-      image: 'https://example.com/baleno.png', // use actual image or test image link
-    },
-  ]);
 
-  // useEffect(() => {
-  //   axios.get('http://localhost:5000/api/products')
-  //     .then(res => setCars(res.data))
-  //     .catch(err => console.error(err));
-  // }, []);
+  useEffect(() => {
+    axios.get('http://localhost:3000/api/products')
+      .then(res => setCars(res.data))
+      .catch(err => console.error(err));
+  }, []);
 
   return (
     <div className="p-6 grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
