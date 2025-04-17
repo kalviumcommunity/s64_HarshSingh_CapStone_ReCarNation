@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ProductCard from './components/carCard';
+import CarList from './components/carCard';
 
 function App() {
   return (
@@ -15,7 +15,7 @@ function App() {
         
         <main className="container py-4">
           <Routes>
-            <Route path="/" element={<ProductCard />} />
+            <Route path="/" element={<CarList />} />
             {/* Add more routes like /edit/:id or /create if needed */}
           </Routes>
         </main>
