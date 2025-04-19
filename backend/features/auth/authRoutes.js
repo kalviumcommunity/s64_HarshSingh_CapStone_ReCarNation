@@ -8,12 +8,12 @@ const { isAuthenticated } = require('./authMiddleware/authMiddleware');
 // JWT routes
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
+
 router.get('/emails', authController.getAllEmails);
 router.get('/profile', isAuthenticated, authController.profile);
 
 // Google OAuth
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 router.get("/google/callback", passport.authenticate("google", { failureRedirect: "/" }), googleController.googleCallback);
-
 
 module.exports = router;
