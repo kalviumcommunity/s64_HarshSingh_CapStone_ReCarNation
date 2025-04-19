@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 const productRoutes = require('./features/products/productsRoutes');
-const PORT = process.env.PORT || 6000;
+const PORT = process.env.PORT || 3000;
 connectDB();
 
 app.use('/api/auth', authRoutes);
