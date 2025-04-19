@@ -78,7 +78,7 @@ const Authentication = () => {
         
         // Redirect to dashboard or home page after successful login
         setTimeout(() => {
-          navigate("/dashboard");
+          navigate("/profile");
         }, 1500);
       } else {
         // Handle registration

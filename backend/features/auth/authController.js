@@ -3,21 +3,28 @@ const bcrypt = require("bcryptjs");
 const User = require("../../model/userModel");
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// Signup
 exports.signup = async (req, res) => {
-  const { name, email, password } = req.body;
+  let { name, email, password } = req.body;
   try {
     email = email.trim().toLowerCase().replace(/\s+/g, '');
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(409).json({ message: "User already exists" });
+
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, password: hashed });
-    res.status(201).json({ message: "User created", user: { id: user._id, name: user.name } });
+
+    res.status(201).json({
+      message: "User created",
+      user: { id: user._id, name: user.name }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
   }
 };
 
+// Login
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -25,33 +32,32 @@ exports.login = async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    
-    // Update last login timestamp
+
     user.lastLogin = new Date();
     await user.save();
-    
+
     const token = jwt.sign(
       { id: user._id, name: user.name, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
-    
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      secure: process.env.NODE_ENV === 'production',
       sameSite: "Strict",
-      maxAge: 3600000, // 1 hour
+      maxAge: 3600000,
     });
-    
-    res.json({ 
-      message: "Logged in successfully", 
-      user: { 
+
+    res.json({
+      message: "Logged in successfully",
+      user: {
         id: user._id,
-        name: user.name, 
-        email: user.email, 
+        name: user.name,
+        email: user.email,
         role: user.role,
         profilePicture: user.profilePicture
-      } 
+      }
     });
   } catch (err) {
     console.error(err);
@@ -59,72 +65,55 @@ exports.login = async (req, res) => {
   }
 };
 
-
+// Google Login
 exports.googleLogin = async (req, res) => {
   const { email, name, googleId, profilePicture } = req.body;
-  
+
   try {
-    // Check if user already exists
     let user = await User.findOne({ email });
-    
+
     if (!user) {
-      // Create new user if not exists
       user = await User.create({
         email,
         name,
         googleId,
         profilePicture,
-        isVerified: true, // Google accounts are pre-verified
+        isVerified: true,
       });
     } else {
-      // Update existing user with Google info if needed
       if (!user.googleId) {
         user.googleId = googleId;
         user.profilePicture = profilePicture || user.profilePicture;
         user.isVerified = true;
         await user.save();
       }
-
-exports.getAllEmails = async(req, res) => {
-    try {
-      const users = await User.find({}, "name email"); // Fetch name and email only
-      const userList = users.map(user => ({
-        name: user.name,
-        email: user.email
-      }));
-      res.status(200).json({ users: userList });
-    } catch (err) {
-      console.error(err);
-      res.status(500).send("Error fetching users");
     }
-    
-    // Update last login timestamp
+
     user.lastLogin = new Date();
     await user.save();
-    
-    // Generate JWT token
+
     const token = jwt.sign(
       { id: user._id, name: user.name, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
-    
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
-      maxAge: 3600000, // 1 hour
+      maxAge: 3600000,
     });
-    
-    res.json({ 
-      message: "Logged in with Google successfully", 
-      user: { 
+
+    res.json({
+      message: "Logged in with Google successfully",
+      user: {
         id: user._id,
-        name: user.name, 
-        email: user.email, 
+        name: user.name,
+        email: user.email,
         role: user.role,
         profilePicture: user.profilePicture
-      } 
+      }
     });
   } catch (err) {
     console.error("Google login error:", err);
@@ -132,11 +121,7 @@ exports.getAllEmails = async(req, res) => {
   }
 };
 
-exports.logout = (req, res) => {
-  res.clearCookie("token");
-  res.json({ message: "Logged out successfully" });
-};
-
+// Get All Users' Emails
 exports.getAllEmails = async (req, res) => {
   try {
     const users = await User.find({}, "name email role lastLogin isVerified");
@@ -154,26 +139,32 @@ exports.getAllEmails = async (req, res) => {
   }
 };
 
+// Profile
+exports.profile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const userProfile = await User.findById(userId);
+    if (!userProfile) return res.status(404).json({ message: "No such user exist!" });
 
-exports.profile = async(req, res)=>{
-    try{
-        const userid = req.user._id;
-        const userProfile = await User.findById(userid);
-        if(!userProfile) return res.status(404).json({message:"No such user exist!"});
-
-        res.status(200).json({
-            message:"User profile",
-            userProfile
-        });
-    }
-    catch(error){
-        res.status(400).json({
-            message: "Error",
-            error: error.message
-        });
-    }
+    res.status(200).json({
+      message: "User profile",
+      userProfile
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "Error",
+      error: error.message
+    });
+  }
 };
 
+// Logout
+exports.logout = (req, res) => {
+  res.clearCookie("token");
+  res.json({ message: "Logged out successfully" });
+};
+
+// Delete User
 exports.deleteUser = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -198,4 +189,3 @@ exports.deleteUser = async (req, res) => {
     });
   }
 };
-
