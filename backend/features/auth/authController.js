@@ -6,6 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 exports.signup = async (req, res) => {
   const { name, email, password } = req.body;
   try {
+    email = email.trim().toLowerCase().replace(/\s+/g, '');
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(409).json({ message: "User already exists" });
     const hashed = await bcrypt.hash(password, 10);
@@ -58,6 +59,7 @@ exports.login = async (req, res) => {
   }
 };
 
+
 exports.googleLogin = async (req, res) => {
   const { email, name, googleId, profilePicture } = req.body;
   
@@ -82,6 +84,18 @@ exports.googleLogin = async (req, res) => {
         user.isVerified = true;
         await user.save();
       }
+
+exports.getAllEmails = async(req, res) => {
+    try {
+      const users = await User.find({}, "name email"); // Fetch name and email only
+      const userList = users.map(user => ({
+        name: user.name,
+        email: user.email
+      }));
+      res.status(200).json({ users: userList });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Error fetching users");
     }
     
     // Update last login timestamp
@@ -140,8 +154,48 @@ exports.getAllEmails = async (req, res) => {
   }
 };
 
-// Protected profile route
-exports.profile = (req, res) => {
-  // req.user is set by the authenticate middleware
-  res.json({ user: req.user });
+
+exports.profile = async(req, res)=>{
+    try{
+        const userid = req.user._id;
+        const userProfile = await User.findById(userid);
+        if(!userProfile) return res.status(404).json({message:"No such user exist!"});
+
+        res.status(200).json({
+            message:"User profile",
+            userProfile
+        });
+    }
+    catch(error){
+        res.status(400).json({
+            message: "Error",
+            error: error.message
+        });
+    }
 };
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const deletedUser = await User.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    res.status(200).json({
+      message: "User deleted successfully!",
+      user: {
+        id: deletedUser._id,
+        name: deletedUser.name,
+        email: deletedUser.email
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "Error",
+      error: error.message
+    });
+  }
+};
+

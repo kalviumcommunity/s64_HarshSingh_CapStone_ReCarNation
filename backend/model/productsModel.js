@@ -27,6 +27,9 @@ const productSchema  = new mongoose.Schema({
             ref: 'User', 
             required: true,
           },
+          image:{
+            type : String // path/url to the file/image
+          }
     },{timestamps: true}
 );
 const Product = mongoose.model("Product", productSchema);
