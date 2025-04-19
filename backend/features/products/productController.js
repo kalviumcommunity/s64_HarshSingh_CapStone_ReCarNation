@@ -9,7 +9,16 @@ class ProductController{
                return res.status(400).json({message: "All fields are required."})
             }
 
-            const product = new Product({ name, company, model, year, description, KilometersTraveled });
+            const product = new Product({
+                 name,
+                 company,
+                 model,
+                 year,
+                 description,
+                 KilometersTraveled,
+                 listedBy: req.user._id,
+                 image: imagePath 
+                });
             
             const savedProduct = await product.save();
             res.status(201).json(savedProduct);
