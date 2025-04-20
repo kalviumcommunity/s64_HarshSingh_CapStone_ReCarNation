@@ -9,5 +9,5 @@ exports.googleCallback = (req, res) => {
     sameSite: "Strict",
   });
 
-  res.redirect("/profile");
+  res.redirect("http://localhost:5173/profile");
 };

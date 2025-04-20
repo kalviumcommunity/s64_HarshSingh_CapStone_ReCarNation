@@ -222,8 +222,8 @@ const Authentication = () => {
                   className="w-full"
                   disabled={isLoading}
                   onClick={() => {
-                    // Google authentication will be implemented with Supabase later
-                    console.log("Google sign-in clicked");
+                    // Redirect to the backend Google OAuth endpoint
+                    window.location.href = "http://localhost:3000/api/auth/google";
                   }}
                 >
                   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
