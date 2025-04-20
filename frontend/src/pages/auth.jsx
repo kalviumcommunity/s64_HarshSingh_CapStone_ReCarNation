@@ -203,15 +203,15 @@ const Authentication = () => {
                 : `${isLoginPage ? "Sign In" : "Sign Up"}`}
             </Button>
 
-            {!isLoginPage && (
-              <>
+            {/* Google Authentication for both Login and Signup */}
+            <>
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-300"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white text-gray-500">
-                      or sign up with
+                      {isLoginPage ? "or sign in with" : "or sign up with"}
                     </span>
                   </div>
                 </div>
@@ -248,7 +248,6 @@ const Authentication = () => {
                   Continue with Google
                 </Button>
               </>
-            )}
           </form>
 
           {/* Switch between login and register */}
