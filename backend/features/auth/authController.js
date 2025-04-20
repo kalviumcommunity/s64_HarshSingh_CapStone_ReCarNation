@@ -142,17 +142,28 @@ exports.getAllEmails = async (req, res) => {
 // Profile
 exports.profile = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const userProfile = await User.findById(userId);
-    if (!userProfile) return res.status(404).json({ message: "No such user exist!" });
+    const userId = req.user.id;
+    const userProfile = await User.findById(userId).select('-password');
+    if (!userProfile) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     res.status(200).json({
-      message: "User profile",
-      userProfile
+      message: "Profile retrieved successfully",
+      user: {
+        id: userProfile._id,
+        name: userProfile.name,
+        email: userProfile.email,
+        role: userProfile.role,
+        profilePicture: userProfile.profilePicture,
+        googleId: userProfile.googleId,
+        isVerified: userProfile.isVerified
+      }
     });
   } catch (error) {
-    res.status(400).json({
-      message: "Error",
+    console.error("Profile fetch error:", error);
+    res.status(500).json({
+      message: "Error fetching profile",
       error: error.message
     });
   }

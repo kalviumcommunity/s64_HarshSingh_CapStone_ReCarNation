@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
-const passport = require('passport')
+const passport = require('passport');
+// Import passport configuration with GoogleStrategy
+require('./features/auth/authMiddleware/passport');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 
