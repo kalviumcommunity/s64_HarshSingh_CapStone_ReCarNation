@@ -84,27 +84,48 @@ class ProductController{
     }
 
 
-static async deleteProduct(req, res) {
-    try {
-        const { id } = req.params;
+    static async deleteProduct(req, res) {
+        try {
+            const { id } = req.params;
 
-        const deletedProduct = await Product.findByIdAndDelete(id);
+            const deletedProduct = await Product.findByIdAndDelete(id);
 
-        if (!deletedProduct) {
-            return res.status(404).json({ message: 'Product not found!' });
+            if (!deletedProduct) {
+                return res.status(404).json({ message: 'Product not found!' });
+            }
+
+            res.status(200).json({
+                message: 'Product deleted successfully!',
+                product: deletedProduct
+            });
+        } catch (error) {
+            res.status(500).json({
+                message: "Error while deleting the product",
+                error: error.message
+            });
         }
-
-        res.status(200).json({
-            message: 'Product deleted successfully!',
-            product: deletedProduct
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Error while deleting the product",
-            error: error.message
-        });
     }
-}
+
+    // Example addition to your ProductController's getAllProducts method
+    static async getAllProducts(req, res){
+        try{
+            const filter = {};
+            if(req.query.featured === 'true') {
+                filter.featured = true;
+            }
+            
+            const limit = req.query.limit ? parseInt(req.query.limit) : 0;
+            
+            const products = await Product.find(filter).limit(limit);
+            res.status(200).json({
+                message: 'Fetched products successfully!',
+                products
+            });
+        }
+        catch(error){
+            res.status(500).json({error: error.message});
+        }
+    }
 }
 
 module.exports = ProductController;
