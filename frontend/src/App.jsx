@@ -2,7 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import Authentication from "./pages/auth";
 import Profile from './pages/profile';
-import Home from './pages/homePage/home';
+import Home from './pages/home';
+import SellCar from './pages/sellCar';
 import { useContext } from "react";
 
 // Protected Route Component
@@ -32,14 +33,22 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/login" element={<Authentication />} />
         <Route path="/register" element={<Authentication />} />
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } 
-          />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/sellCar" 
+          element={
+            <ProtectedRoute>
+              <SellCar />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </Router>
     </AuthProvider>

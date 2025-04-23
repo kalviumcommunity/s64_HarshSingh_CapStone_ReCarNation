@@ -54,7 +54,7 @@ const Navbar = () => {
             <Link to="/listings" className="text-[#001F3F] hover:text-[#1EAEDB] font-medium transition-colors duration-200">
               Browse Cars
             </Link>
-            <Link to="/sell-car" className="text-[#001F3F] hover:text-[#1EAEDB] font-medium transition-colors duration-200">
+            <Link to="/sellCar" className="text-[#001F3F] hover:text-[#1EAEDB] font-medium transition-colors duration-200">
               Sell a Car
             </Link>
             <Link to="/orders" className="text-[#001F3F] hover:text-[#1EAEDB] font-medium transition-colors duration-200">
