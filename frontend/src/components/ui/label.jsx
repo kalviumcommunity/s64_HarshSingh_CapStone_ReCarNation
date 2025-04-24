@@ -12,6 +12,6 @@ const Label = React.forwardRef(({ className, ...props }, ref) => (
     {...props}
   />
 ));
-Label.displayName = "Label";
+Label.displayName = LabelPrimitive.Root.displayName;
 
 export { Label };

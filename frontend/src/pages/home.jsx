@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Car, ArrowRight, SearchIcon, ThumbsUp, Shield, DollarSign, Award, ChevronRight, Heart, MapPin, Calendar, Fuel, BarChart3 } from "lucide-react";
@@ -40,8 +38,6 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      
       <main className="flex-grow">
         {/* Hero Section */}
         <div className="relative h-[550px] overflow-hidden">
@@ -158,7 +154,7 @@ const HomePage = () => {
             )}
             
             <div className="text-center mt-10">
-              <Button className="bg-blue-900 hover:bg-cyan-600 text-white px-8">
+              <Button className="bg-blue-950 hover:bg-blue-900 text-white px-8">
                 <Link to="/listings">Browse All Cars</Link>
               </Button>
             </div>
@@ -243,7 +239,7 @@ const HomePage = () => {
             </div>
             
             <div className="text-center mt-10">
-              <Button className= "bg-blue-900 hover:bg-cyan-600 text-white">
+              <Button className= "bg-blue-950 hover:bg-blue-900 text-white">
                 <Link to="/listings" className="flex items-center">
                   Find Your Car
                   <ArrowRight className="h-5 w-5 ml-2" />
@@ -322,7 +318,7 @@ const HomePage = () => {
                                 <Button className="bg-orange-600 hover:bg-orange-500 text-white">
                       <Link to="/register">Create an Account</Link>
                     </Button>
-                    <Button variant="outline" className="border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white">
+                    <Button variant="outline" className="border-blue-950 text-blue-950 hover:bg-blue-950 hover:text-white">
                       <Link to="/listings">Browse Listings</Link>
                     </Button>
                   </div>
@@ -339,8 +335,6 @@ const HomePage = () => {
           </div>
         </section>
       </main>
-      
-      <Footer />
     </div>
   );
 };

@@ -51,16 +51,16 @@ const Navbar = () => {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-7">
-            <Link to="/listings" className="text-[#001F3F] hover:text-[#1EAEDB] font-medium transition-colors duration-200">
+            <Link to="/listings" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Browse Cars
             </Link>
-            <Link to="/sellCar" className="text-[#001F3F] hover:text-[#1EAEDB] font-medium transition-colors duration-200">
+            <Link to="/sellCar" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Sell a Car
             </Link>
-            <Link to="/orders" className="text-[#001F3F] hover:text-[#1EAEDB] font-medium transition-colors duration-200">
+            <Link to="/orders" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Orders
             </Link>
-            <Link to="/messaging" className="text-[#001F3F] hover:text-[#1EAEDB] font-medium transition-colors duration-200">
+            <Link to="/messaging" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Messages
             </Link>
           </div>

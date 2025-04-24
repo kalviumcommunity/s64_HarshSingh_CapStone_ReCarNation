@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import Header from "@/components/Header";
-import Footer from "@/components/footer";
 import { 
   Package, 
   Heart, 
@@ -161,11 +159,9 @@ function UserProfilePage() {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <Header />
         <main className="flex-grow py-8 flex items-center justify-center">
           <p>Loading profile...</p>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -174,14 +170,12 @@ function UserProfilePage() {
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <Header />
         <main className="flex-grow py-8 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-500 mb-4">Error loading profile: {error}</p>
             <Button onClick={() => navigate('/login')}>Go to Login</Button>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -191,7 +185,6 @@ function UserProfilePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
       <main className="flex-grow py-8">
         <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Profile Card */}
@@ -264,7 +257,6 @@ function UserProfilePage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
