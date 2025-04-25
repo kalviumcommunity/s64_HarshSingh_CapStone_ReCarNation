@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const productSchema  = new mongoose.Schema(
-    {
+const productSchema  = new mongoose.Schema({
         name: {
             type: String,
             required: true
@@ -22,8 +21,16 @@ const productSchema  = new mongoose.Schema(
         },
         KilometersTraveled: {
             type: Number,
-        }
-    }
+        },
+        listedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User', 
+            required: true,
+          },
+          image:{
+            type : String // path/url to the file/image
+          }
+    },{timestamps: true}
 );
 const Product = mongoose.model("Product", productSchema);
 module.exports = Product;

@@ -1,9 +1,25 @@
 const Product = require('../../model/productsModel')
 
-class ProductContoller{
+class ProductController{
     static async createProduct(req, res){
         try{
-            const product = new Product(req.body);
+            const {name, company, model, year, description, KilometersTraveled} = req.body;
+
+            if(!name || !company || !model || !year){
+               return res.status(400).json({message: "All fields are required."})
+            }
+
+            const product = new Product({
+                 name,
+                 company,
+                 model,
+                 year,
+                 description,
+                 KilometersTraveled,
+                 listedBy: req.user._id,
+                 image: imagePath 
+                });
+            
             const savedProduct = await product.save();
             res.status(201).json(savedProduct);
         }
@@ -11,7 +27,7 @@ class ProductContoller{
             res.status(400).json({error : error.message});
         }
     }
-    static async getAllProduct(req, res){
+    static async getAllProducts(req, res){
         try{
             const products = await Product.find();
             res.status(200).json({
@@ -23,18 +39,41 @@ class ProductContoller{
             res.status(500).json({error: error.message});
         }
     }
+
+    static async getProductById(req, res){
+        try{
+            const {id} = req.params;
+            const products = await Product.findById(id);
+
+            if (!product) {
+                return res.status(404).json({ message: 'Product not found!' });
+            };
+
+            res.status(200).json({
+                message : 'Requested Product fetched Successfully',
+                products
+            });
+        }
+        catch(error){
+            res.status(500).json({error: error.message});
+        }
+    }
+
     static async updateProduct(req, res){
         try{
            const {id} = req.params;
-           const updatedProduct = await Product.findById(id, req.body, {
+           const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
             new : true,
             runValidators: true
            });
 
            if(!updatedProduct) {
-            res.status(404).json({message: 'Product not found!'})
+            res.status(400).json({message: 'Product not found!'})
            }
-           res.status(200).json({message: 'Updated product!'})
+           res.status(200).json({
+            message: 'Updated product!',
+            product: updatedProduct
+        });        
         }
         catch(error){
             res.status(500).json({
@@ -43,6 +82,7 @@ class ProductContoller{
             });
         }
     }
+  
     static async deleteProduct(req, res) {
         try {
             const { id } = req.params;
@@ -54,7 +94,7 @@ class ProductContoller{
     
             res.status(200).json({
                 message: 'Product deleted successfully!',
-                deletedProduct
+                product: deletedProduct
             });
         } catch (error) {
             res.status(500).json({
@@ -66,3 +106,5 @@ class ProductContoller{
 }
 
 module.exports = ProductContoller;
+
+
