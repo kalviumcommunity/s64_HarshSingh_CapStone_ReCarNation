@@ -51,7 +51,7 @@ const Navbar = () => {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-7">
-            <Link to="/listings" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
+            <Link to="/browse" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Browse Cars
             </Link>
             <Link to="/sellCar" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
@@ -117,7 +117,7 @@ const Navbar = () => {
                 {authUser ? (
                   <img
                     src={authUser.photo || "https://via.placeholder.com/32"}
-                    alt={authUser.firstName}
+                    alt={authUser.firstName.slice(0, 2)}
                     className="h-8 w-8 rounded-full object-cover border border-gray-300"
                   />
                 ) : (

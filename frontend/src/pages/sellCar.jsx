@@ -27,6 +27,7 @@ const SellCarPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -182,35 +183,30 @@ const SellCarPage = () => {
   }, []);
 
   // Handle form submission
-  const handleSubmit = useCallback(async () => {
-    if (!validateStep(activeStep)) return;
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setIsSubmitting(true);
-    setIsUploading(true);
+    setError(null);
+
     try {
-      // Create form data for multipart/form-data
       const formDataToSend = new FormData();
       
-      // Add all form fields except images
+      // Append all form fields
       Object.keys(formData).forEach(key => {
         if (key !== 'images') {
           formDataToSend.append(key, formData[key]);
         }
       });
 
-      // Add images separately
+      // Append images
       formData.images.forEach((img, index) => {
-        formDataToSend.append(`images`, img.file);
+        formDataToSend.append('images', img.file);
       });
 
-      // Add user ID from context
-      if (!user?._id) {
-        throw new Error('User not authenticated');
-      }
+      // Add user ID
       formDataToSend.append('userId', user._id);
 
-      // Send to backend with progress tracking
-      const response = await axios.post(`${API_BASE_URL}/listings`, formDataToSend, {
+      const response = await axios.post('http://localhost:3000/api/products/', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -222,30 +218,36 @@ const SellCarPage = () => {
       });
 
       if (response.data) {
-        toast.success('Your car listing has been created successfully!');
-        // Cleanup image previews
-        cleanup();
-        // Redirect to profile or listing page
-        navigate('/profile');
+        toast.success('Car listing created successfully!');
+        // Reset form
+        setFormData({
+          make: '',
+          model: '',
+          year: '',
+          trim: '',
+          mileage: '',
+          price: '',
+          transmission: '',
+          fuelType: '',
+          description: '',
+          location: '',
+          contactNumber: '',
+          images: []
+        });
+        setActiveStep(1);
+        setUploadProgress(0);
+        // Redirect to the newly created listing
+        navigate(`/car/${response.data._id}`);
       }
-    } catch (error) {
-      console.error('Error creating listing:', error);
-      
-      let errorMessage = 'Failed to create listing. Please try again.';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message === 'User not authenticated') {
-        errorMessage = 'Please login to create a listing';
-        navigate('/login');
-      }
-      
+    } catch (err) {
+      console.error('Error creating listing:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to create listing. Please try again.';
+      setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
-      setIsUploading(false);
-      setUploadProgress(0);
     }
-  }, [formData, activeStep, user, navigate, cleanup]);
+  };
 
   // Progress steps data
   const steps = [

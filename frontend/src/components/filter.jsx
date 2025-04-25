@@ -40,12 +40,12 @@ const FilterSidebar = ({ filters, onFilterChange }) => {
   };
 
   return (
-    <div className="space-y-6 p-4">
-      <h2 className="text-lg font-semibold">Filters</h2>
+    <div className="bg-white rounded-xl shadow-md p-6 m-4 space-y-6 w-80">
+      <h2 className="text-xl font-semibold text-gray-800 border-b pb-3">Filters</h2>
 
       {/* Price Range Filter */}
-      <div className="space-y-2">
-        <Label>Price Range (₹)</Label>
+      <div className="space-y-3">
+        <Label className="text-gray-700 font-medium">Price Range (₹)</Label>
         <Slider
           value={filters.priceRange}
           onValueChange={handlePriceChange}
@@ -61,8 +61,8 @@ const FilterSidebar = ({ filters, onFilterChange }) => {
       </div>
 
       {/* Year Range Filter */}
-      <div className="space-y-2">
-        <Label>Year Range</Label>
+      <div className="space-y-3">
+        <Label className="text-gray-700 font-medium">Year Range</Label>
         <Slider
           value={filters.yearRange}
           onValueChange={handleYearChange}
@@ -78,14 +78,14 @@ const FilterSidebar = ({ filters, onFilterChange }) => {
       </div>
 
       {/* Make Filter */}
-      <div className="space-y-2">
-        <Label>Make</Label>
+      <div className="space-y-3">
+        <Label className="text-gray-700 font-medium">Make</Label>
         <Select value={filters.make} onValueChange={handleMakeChange}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select make" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Makes</SelectItem>
+            <SelectItem value="all">All Makes</SelectItem>
             {CAR_MAKES.map(make => (
               <SelectItem key={make} value={make}>{make}</SelectItem>
             ))}
@@ -94,23 +94,23 @@ const FilterSidebar = ({ filters, onFilterChange }) => {
       </div>
 
       {/* Model Filter */}
-      <div className="space-y-2">
-        <Label>Model</Label>
+      <div className="space-y-3">
+        <Label className="text-gray-700 font-medium">Model</Label>
         <Select value={filters.model} onValueChange={handleModelChange}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select model" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Models</SelectItem>
+            <SelectItem value="all">All Models</SelectItem>
             {/* Model options would be populated based on selected make */}
           </SelectContent>
         </Select>
       </div>
 
       {/* Features Filter */}
-      <div className="space-y-2">
-        <Label>Features</Label>
-        <div className="space-y-2">
+      <div className="space-y-3">
+        <Label className="text-gray-700 font-medium">Features</Label>
+        <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-lg">
           {CAR_FEATURES.map(feature => (
             <div key={feature} className="flex items-center space-x-2">
               <Checkbox
@@ -118,7 +118,7 @@ const FilterSidebar = ({ filters, onFilterChange }) => {
                 checked={filters.features.includes(feature)}
                 onCheckedChange={() => handleFeatureToggle(feature)}
               />
-              <Label htmlFor={feature} className="text-sm">{feature}</Label>
+              <Label htmlFor={feature} className="text-sm text-gray-600">{feature}</Label>
             </div>
           ))}
         </div>

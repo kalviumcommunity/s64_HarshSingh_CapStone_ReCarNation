@@ -21,6 +21,7 @@
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "google-auth-library": "^9.15.1",
+    "hooks": "^0.3.2",
     "jsonwebtoken": "^9.0.2",
     "middleware": "^1.0.0",
     "mongoose": "^8.13.2",

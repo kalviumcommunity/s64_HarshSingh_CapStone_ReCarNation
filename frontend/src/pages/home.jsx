@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Car, ArrowRight, SearchIcon, ThumbsUp, Shield, DollarSign, Award, ChevronRight, Heart, MapPin, Calendar, Fuel, BarChart3 } from "lucide-react";
 import axios from "axios";
+import { CarCard } from "@/components/productCards";
 
 const HomePage = () => {
   const [featuredCars, setFeaturedCars] = useState([]);
@@ -10,30 +11,43 @@ const HomePage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchFeaturedCars = async () => {
+    const fetchCars = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/products', {
+        // First try to fetch featured cars
+        const featuredResponse = await axios.get('http://localhost:3000/api/products', {
           params: {
-            limit: 4,
-            sort: 'createdAt',
-            order: 'desc'
+            featured: true,
+            limit: 4
           }
         });
         
-        if (response.data.products && response.data.products.length > 0) {
-          setFeaturedCars(response.data.products);
+        if (featuredResponse.data && featuredResponse.data.length > 0) {
+          setFeaturedCars(featuredResponse.data);
         } else {
-          setError('No featured cars available at the moment');
+          // If no featured cars, fetch random cars
+          const randomResponse = await axios.get('http://localhost:3000/api/products', {
+            params: {
+              limit: 4,
+              sort: 'createdAt',
+              order: 'desc'
+            }
+          });
+          
+          if (randomResponse.data && randomResponse.data.length > 0) {
+            setFeaturedCars(randomResponse.data);
+          } else {
+            setError('No cars available at the moment');
+          }
         }
         setLoading(false);
       } catch (err) {
-        setError('Failed to fetch featured cars. Please try again later.');
+        setError('Failed to fetch cars. Please try again later.');
         setLoading(false);
-        console.error('Error fetching featured cars:', err);
+        console.error('Error fetching cars:', err);
       }
     };
 
-    fetchFeaturedCars();
+    fetchCars();
   }, []);
 
   return (
@@ -99,7 +113,7 @@ const HomePage = () => {
                 </div>
                 
                 <div className="mt-4 flex justify-between items-center text-sm">
-                  <Link to="/listings" className="text-brand-blue hover:text-brand-lightBlue flex items-center transition-colors duration-200">
+                  <Link to="/browse" className="text-brand-blue hover:text-brand-lightBlue flex items-center transition-colors duration-200">
                     Advanced Search
                     <ArrowRight className="ml-1 h-3.5 w-3.5" />
                   </Link>
@@ -111,16 +125,15 @@ const HomePage = () => {
         </div>
 
         {/* Featured Listings Section */}
-        <section className="py-12 bg-gray-50">
+        <section className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold text-brand-blue">Featured Listings</h2>
-              <Link to="/listings" className="text-brand-orange hover:text-brand-lightOrange font-medium flex items-center">
-                View All Listings
-                <ChevronRight className="h-4 w-4 ml-1" />
+              <h2 className="text-3xl font-bold text-gray-900">Featured Cars</h2>
+              <Link to="/browse" className="text-brand-orange hover:text-brand-lightOrange flex items-center">
+                View All <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
-            
+
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-orange"></div>
@@ -135,29 +148,13 @@ const HomePage = () => {
                   Try Again
                 </Button>
               </div>
-            ) : featuredCars.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">No featured cars available at the moment.</p>
-                <Button 
-                  onClick={() => window.location.reload()} 
-                  className="bg-brand-blue hover:bg-brand-lightBlue text-white"
-                >
-                  Refresh
-                </Button>
-              </div>
             ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredCars.map((car) => (
-                  <CarCard key={car._id} {...car} />
-              ))}
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredCars.map((car) => (
+                  <CarCard key={car._id} product={car} />
+                ))}
+              </div>
             )}
-            
-            <div className="text-center mt-10">
-              <Button className="bg-blue-950 hover:bg-blue-900 text-white px-8">
-                <Link to="/listings">Browse All Cars</Link>
-              </Button>
-            </div>
           </div>
         </section>
         
@@ -240,7 +237,7 @@ const HomePage = () => {
             
             <div className="text-center mt-10">
               <Button className= "bg-blue-950 hover:bg-blue-900 text-white">
-                <Link to="/listings" className="flex items-center">
+                <Link to="/browse" className="flex items-center">
                   Find Your Car
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </Link>
@@ -319,7 +316,7 @@ const HomePage = () => {
                       <Link to="/register">Create an Account</Link>
                     </Button>
                     <Button variant="outline" className="border-blue-950 text-blue-950 hover:bg-blue-950 hover:text-white">
-                      <Link to="/listings">Browse Listings</Link>
+                      <Link to="/browse">Browse Listings</Link>
                     </Button>
                   </div>
                 </div>
@@ -362,96 +359,5 @@ const whyChooseUsFeatures = [
     description: "Our customer support team is available to assist you through every step of the buying process."
   }
 ];
-
-// Car Card Component
-const CarCard = ({
-  _id,
-  name,
-  company,
-  model,
-  year,
-  KilometersTraveled,
-  description,
-  image,
-  price = null
-}) => {
-  const [isFavorite, setIsFavorite] = React.useState(false);
-
-  const formatPrice = (price) => {
-    if (!price) return 'Price on request';
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(price);
-  };
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return "https://via.placeholder.com/300x200";
-    if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:3000/uploads/${imagePath}`;
-  };
-
-  return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 font-sans">
-      <div className="relative h-40 w-full overflow-hidden">
-        <img 
-          src={getImageUrl(image)} 
-          alt={`${year} ${company} ${model}`} 
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-        />
-        <div className="absolute top-2 right-2 bg-orange-600 text-white text-xs font-medium px-2 py-1 rounded">
-          Featured
-        </div>
-        <button 
-          onClick={() => setIsFavorite(!isFavorite)}
-          className={`absolute top-2 left-2 p-1.5 rounded-full ${isFavorite ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600'} hover:bg-red-500 hover:text-white transition-colors duration-300`}
-        >
-          <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
-        </button>
-      </div>
-      
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-base font-semibold line-clamp-1 text-gray-800 hover:text-blue-900 transition-colors duration-200">
-            {year} {company} {model}
-          </h3>
-          <span className="text-base font-bold text-orange-600">{formatPrice(price)}</span>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <div className="flex items-center text-gray-600">
-            <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-            <span className="text-xs">{year}</span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-            <span className="text-xs truncate">Location not specified</span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <BarChart3 className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-            <span className="text-xs">{KilometersTraveled?.toLocaleString() || '0'} km</span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <Fuel className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-            <span className="text-xs">Petrol</span>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1 border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white transition-colors duration-300 text-sm py-1.5">
-            <Car className="h-3.5 w-3.5 mr-1.5" />
-            <Link to={`/car/${_id}`}>Details</Link>
-          </Button>
-          <Link to={`/messaging/${_id}`} className="flex-1">
-            <Button className="w-full bg-orange-600 hover:bg-orange-500 text-white transition-colors duration-300 text-sm py-1.5">
-              Contact Seller
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default HomePage;

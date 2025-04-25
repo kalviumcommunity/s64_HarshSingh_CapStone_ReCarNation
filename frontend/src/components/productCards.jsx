@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Car, MapPin, Calendar, Fuel, BarChart3, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from '@/context/AuthContext';
 
 // PropTypes are defined in comments for documentation
 /**
@@ -41,37 +42,55 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 // Memoized car card component for better performance
 const CarCard = memo(({ product }) => {
+  const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Get user token from localStorage
-  const token = localStorage.getItem('token');
-
-  // Check if car is in favorites on component mount
   useEffect(() => {
     const checkFavoriteStatus = async () => {
-      if (!token) return;
-      
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/user/favorites`,
-          { 
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get(`http://localhost:3000/api/favorites/${product._id}`, {
+          headers: {
+            Authorization: `Bearer ${user.token}`
           }
-        );
-        
-        if (response.data && Array.isArray(response.data.favorites)) {
-          const isFav = response.data.favorites.some(fav => fav._id === product._id);
-          setIsFavorite(isFav);
-        }
+        });
+        setIsFavorite(response.data.isFavorite);
       } catch (error) {
         console.error('Error checking favorite status:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    
+
     checkFavoriteStatus();
-  }, [product._id, token]);
+  }, [product._id, user]);
+
+  const toggleFavorite = async () => {
+    if (!user) {
+      // Redirect to login or show login modal
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `http://localhost:3000/api/favorites/${product._id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`
+          }
+        }
+      );
+      setIsFavorite(response.data.isFavorite);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
 
   // Memoize image URL calculation
   const imageUrl = React.useMemo(() => {
@@ -79,43 +98,6 @@ const CarCard = memo(({ product }) => {
       ? `${API_BASE_URL}/uploads/${product.image}` 
       : "https://via.placeholder.com/400x300?text=No+Image+Available";
   }, [product.image]);
-
-  const handleFavoriteClick = async () => {
-    if (!token) {
-      // Redirect to login or show login modal
-      alert('Please log in to save favorites');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      if (isFavorite) {
-        // Remove from favorites
-        await axios.delete(
-          `${API_BASE_URL}/user/favorites/${product._id}`,
-          { 
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
-      } else {
-        // Add to favorites
-        await axios.post(
-          `${API_BASE_URL}/user/favorites`,
-          { productId: product._id },
-          { 
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
-      }
-      setIsFavorite(!isFavorite);
-    } catch (error) {
-      console.error('Error updating favorites:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
@@ -132,7 +114,7 @@ const CarCard = memo(({ product }) => {
           </Badge>
         )}
         <button 
-          onClick={handleFavoriteClick}
+          onClick={toggleFavorite}
           disabled={isLoading}
           className={`absolute top-2 left-2 p-1.5 rounded-full ${
             isFavorite ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600'

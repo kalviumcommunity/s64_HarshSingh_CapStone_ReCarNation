@@ -1,31 +1,28 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, AuthContext } from "./context/AuthContext";
-import Authentication from "./pages/auth";
-import Profile from './pages/profile';
-import Home from './pages/home';
-import SellCar from './pages/sellCar';
-import BrowseCar from './pages/browseCar';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AuthContext, useAuth } from '@/context/AuthContext';
+import Home from '@/pages/home';
+import Login from '@/pages/auth';
+import Profile from '@/pages/profile';
+import SellCar from '@/pages/sellCar';
+import BrowseCar from '@/pages/BrowseCars';
+import AboutUs from '@/pages/static/AboutUs';
+import Contact from '@/pages/static/Contact';
+import HelpCenter from '@/pages/static/HelpCenter';
+import TermsAndServices from '@/pages/static/TermsAndServices';
+import PrivacyPolicy from '@/pages/static/PrivacyPolicy';
 import MessagingPage from './pages/messegingPage';
 import OrdersPage from './pages/orders';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useContext } from "react";
+import Wishlist from '@/pages/Wishlist';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useContext(AuthContext);
-
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-orange"></div>
-    </div>;
-  }
-
-  // Only redirect to login if we're sure the user is not authenticated
-  if (!loading && !user) {
+  const { user } = useAuth();
+  if (!user) {
     return <Navigate to="/login" />;
   }
-
   return children;
 };
 
@@ -45,72 +42,69 @@ const Layout = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <BrowserRouter>
         <Routes>
-          {/* Auth routes without header/footer */}
-          <Route path="/login" element={<Authentication />} />
-          <Route path="/register" element={<Authentication />} />
+          <Route path="/" element={<Layout><Home /></Layout>} />
+          <Route path="/home" element={<Layout><Home /></Layout>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Login />} />
+          <Route path="/about" element={<Layout><AboutUs /></Layout>} />
+          <Route path="/contact" element={<Layout><Contact /></Layout>} />
+          <Route path="/help" element={<Layout><HelpCenter /></Layout>} />
+          <Route path="/terms" element={<Layout><TermsAndServices /></Layout>} />
+          <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
+          <Route path="/browse" element={<Layout><BrowseCar /></Layout>} />
           
-          {/* Routes with header/footer */}
-          <Route path="/" element={
-            <Layout>
-              <Home />
-            </Layout>
-          } />
-          <Route path="/home" element={
-            <Layout>
-              <Home />
-            </Layout>
-          } />
-          <Route path="/browse" element={
-            <Layout>
-              <BrowseCar />
-            </Layout>
-          } />
-          
-          {/* Protected routes with header/footer */}
-          <Route 
-            path="/profile" 
+          <Route
+            path="/profile"
             element={
               <ProtectedRoute>
-                <Layout>
-                  <Profile />
-                </Layout>
+                <Layout><Profile /></Layout>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/sellCar" 
+          <Route
+            path="/sellCar"
             element={
               <ProtectedRoute>
-                <Layout>
-                  <SellCar />
-                </Layout>
+                <Layout><SellCar /></Layout>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/orders" 
+          <Route
+            path="/orders"
             element={
               <ProtectedRoute>
-                <Layout>
-                  <OrdersPage />
-                </Layout>
+                <Layout><OrdersPage /></Layout>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/messaging/:id" 
+          <Route
+            path="/messaging/:id"
             element={
               <ProtectedRoute>
-                <Layout>
-                  <MessagingPage />
-                </Layout>
+                <Layout><MessagingPage /></Layout>
               </ProtectedRoute>
-            } 
+            }
+          />
+          <Route
+            path="/messaging/"
+            element={
+              <ProtectedRoute>
+                <Layout><MessagingPage /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <Layout><Wishlist /></Layout>
+              </ProtectedRoute>
+            }
           />
         </Routes>
-      </Router>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

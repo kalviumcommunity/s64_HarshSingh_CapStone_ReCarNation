@@ -52,8 +52,8 @@ const currentYear = new Date().getFullYear();
 const Footer = memo(() => {
   // Data for Quick Links section
   const quickLinks = [
-    { to: "/listings", text: "Browse Cars" },
-    { to: "/sell-car", text: "Sell a Car" },
+    { to: "/browse", text: "Browse Cars" },
+    { to: "/sellCar", text: "Sell a Car" },
     { to: "/about", text: "About Us" },
     { to: "/contact", text: "Contact" }
   ];

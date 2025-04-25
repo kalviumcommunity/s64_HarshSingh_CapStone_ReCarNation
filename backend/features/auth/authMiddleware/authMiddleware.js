@@ -1,10 +1,18 @@
 const jwt = require("jsonwebtoken");
 
 exports.isAuthenticated = (req, res, next) => {
-  const token = req.cookies.token;
+  // Check for token in Authorization header first
+  const authHeader = req.headers.authorization;
+  let token;
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else {
+    // Fallback to cookie if no Authorization header
+    token = req.cookies.token;
+  }
   
   console.log("Authentication check - Token:", token ? "Present" : "Missing");
-  console.log("Cookies received:", req.cookies);
   
   if (!token) {
     console.log("Authentication failed: No token provided");
