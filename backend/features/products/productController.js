@@ -1,15 +1,24 @@
 const Product = require('../../model/productsModel')
 
-class ProductContorller{
+class ProductController{
     static async createProduct(req, res){
         try{
             const {name, company, model, year, description, KilometersTraveled} = req.body;
 
             if(!name || !company || !model || !year){
-               return res.status(404).json({message: "All fields are required."})
+               return res.status(400).json({message: "All fields are required."})
             }
 
-            const product = new Product({ name, company, model, year, description, KilometersTraveled });
+            const product = new Product({
+                 name,
+                 company,
+                 model,
+                 year,
+                 description,
+                 KilometersTraveled,
+                 listedBy: req.user._id,
+                 image: imagePath 
+                });
             
             const savedProduct = await product.save();
             res.status(201).json(savedProduct);
@@ -30,6 +39,26 @@ class ProductContorller{
             res.status(500).json({error: error.message});
         }
     }
+
+    static async getProductById(req, res){
+        try{
+            const {id} = req.params;
+            const products = await Product.findById(id);
+
+            if (!product) {
+                return res.status(404).json({ message: 'Product not found!' });
+            };
+
+            res.status(200).json({
+                message : 'Requested Product fetched Successfully',
+                products
+            });
+        }
+        catch(error){
+            res.status(500).json({error: error.message});
+        }
+    }
+
     static async updateProduct(req, res){
         try{
            const {id} = req.params;
@@ -53,5 +82,29 @@ class ProductContorller{
             });
         }
     }
+
+
+static async deleteProduct(req, res) {
+    try {
+        const { id } = req.params;
+
+        const deletedProduct = await Product.findByIdAndDelete(id);
+
+        if (!deletedProduct) {
+            return res.status(404).json({ message: 'Product not found!' });
+        }
+
+        res.status(200).json({
+            message: 'Product deleted successfully!',
+            product: deletedProduct
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Error while deleting the product",
+            error: error.message
+        });
+    }
 }
-module.exports = ProductContorller;
+}
+
+module.exports = ProductController;

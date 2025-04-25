@@ -1,27 +1,100 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, User, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-// import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { loginUser, registerUser } from "./apiService";
 
 const Authentication = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  
   const location = useLocation();
+  const navigate = useNavigate();
   const isLoginPage = location.pathname === "/login";
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    // Reset previous error messages
+    setError("");
+    
+    // Validation checks
+    if (!email) {
+      setError("Email is required");
+      return false;
+    }
+    if (!password) {
+      setError("Password is required");
+      return false;
+    }
+    if (!isLoginPage && !name) {
+      setError("Name is required");
+      return false;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return false;
+    }
+    
+    // Password length validation
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Authentication logic will be implemented with Supabase later
-    console.log("Form submitted:", { email, password, name });
+    
+    if (!validateForm()) {
+      return;
+    }
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+    
+    try {
+      if (isLoginPage) {
+        // Handle login
+        const response = await loginUser({ email, password });
+        setSuccess("Login successful!");
+        
+        // Store user info in localStorage or context if needed
+        localStorage.setItem("user", JSON.stringify(response.user));
+        
+        // Redirect to dashboard or home page after successful login
+        setTimeout(() => {
+          navigate("/profile");
+        }, 1500);
+      } else {
+        // Handle registration
+        const response = await registerUser({ name, email, password });
+        setSuccess("Registration successful! Please log in.");
+        
+        // Redirect to login page after successful registration
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
+      }
+    } catch (err) {
+      setError(err.message || "Authentication failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,6 +122,19 @@ const Authentication = () => {
             </h1>
           </div>
 
+          {/* Error and Success Messages */}
+          {error && (
+            <Alert className="mb-4 bg-red-50 border-red-200 text-red-800">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          {success && (
+            <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLoginPage && (
@@ -61,6 +147,7 @@ const Authentication = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="pl-10"
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -75,6 +162,7 @@ const Authentication = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -88,11 +176,13 @@ const Authentication = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
                   className="absolute right-3 top-3 text-gray-400"
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -106,19 +196,22 @@ const Authentication = () => {
             <Button
               type="submit"
               className="w-full bg-orange-600 hover:bg-blue-700 text-white"
+              disabled={isLoading}
             >
-              {isLoginPage ? "Sign In" : "Sign Up"}
+              {isLoading 
+                ? `${isLoginPage ? "Signing In..." : "Signing Up..."}` 
+                : `${isLoginPage ? "Sign In" : "Sign Up"}`}
             </Button>
 
-            {!isLoginPage && (
-              <>
+            {/* Google Authentication for both Login and Signup */}
+            <>
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-300"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white text-gray-500">
-                      or sign up with
+                      {isLoginPage ? "or sign in with" : "or sign up with"}
                     </span>
                   </div>
                 </div>
@@ -127,9 +220,10 @@ const Authentication = () => {
                   type="button"
                   variant="outline"
                   className="w-full"
+                  disabled={isLoading}
                   onClick={() => {
-                    // Google authentication will be implemented with Supabase later
-                    console.log("Google sign-in clicked");
+                    // Redirect to the backend Google OAuth endpoint
+                    window.location.href = "http://localhost:3000/api/auth/google";
                   }}
                 >
                   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
@@ -154,7 +248,6 @@ const Authentication = () => {
                   Continue with Google
                 </Button>
               </>
-            )}
           </form>
 
           {/* Switch between login and register */}
