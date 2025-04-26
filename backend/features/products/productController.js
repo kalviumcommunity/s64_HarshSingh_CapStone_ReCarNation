@@ -85,7 +85,28 @@ const createProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
-        const products = await Product.find();
+        const { featured, limit, sort, order } = req.query;
+        let query = {};
+
+        // If featured is true, only return featured cars
+        if (featured === 'true') {
+            query.isFeatured = true;
+        }
+
+        // Build sort object
+        let sortOptions = {};
+        if (sort) {
+            sortOptions[sort] = order === 'desc' ? -1 : 1;
+        } else {
+            // Default sort by creation date if no sort specified
+            sortOptions.createdAt = -1;
+        }
+
+        // Execute query with options
+        const products = await Product.find(query)
+            .sort(sortOptions)
+            .limit(parseInt(limit) || 0);
+
         res.json(products);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching products', error: error.message });
