@@ -9,7 +9,16 @@ class ProductController{
                return res.status(400).json({message: "All fields are required."})
             }
 
-            const product = new Product({ name, company, model, year, description, KilometersTraveled });
+            const product = new Product({
+                 name,
+                 company,
+                 model,
+                 year,
+                 description,
+                 KilometersTraveled,
+                 listedBy: req.user._id,
+                 image: imagePath 
+                });
             
             const savedProduct = await product.save();
             res.status(201).json(savedProduct);
@@ -73,29 +82,29 @@ class ProductController{
             });
         }
     }
-
-
-static async deleteProduct(req, res) {
-    try {
-        const { id } = req.params;
-
-        const deletedProduct = await Product.findByIdAndDelete(id);
-
-        if (!deletedProduct) {
-            return res.status(404).json({ message: 'Product not found!' });
+  
+    static async deleteProduct(req, res) {
+        try {
+            const { id } = req.params;
+            const deletedProduct = await Product.findByIdAndDelete(id);
+    
+            if (!deletedProduct) {
+                return res.status(404).json({ message: 'Product not found!' });
+            }
+    
+            res.status(200).json({
+                message: 'Product deleted successfully!',
+                product: deletedProduct
+            });
+        } catch (error) {
+            res.status(500).json({
+                message: 'Error while deleting the product',
+                error: error.message
+            });
         }
-
-        res.status(200).json({
-            message: 'Product deleted successfully!',
-            product: deletedProduct
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Error while deleting the product",
-            error: error.message
-        });
     }
 }
-}
 
-module.exports = ProductController;
+module.exports = ProductContoller;
+
+
