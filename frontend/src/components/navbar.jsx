@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
@@ -11,7 +11,8 @@ import {
   LogOut,
   Car
 } from "lucide-react";
-import { AuthContext } from "@/context/AuthContext";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../store/slices/authSlice";
 
 // Just for demo: replace with actual login state and user data
 const isLoggedIn = false;
@@ -23,16 +24,21 @@ const user = {
 const wishlistCount = 0;
 
 const Navbar = () => {
-  const { user: authUser, loading, logout } = useContext(AuthContext);
+  const { user: authUser, isAuthenticated } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const [accountOpen, setAccountOpen] = useState(false);
   // Tooltip on heart
   const [heartHover, setHeartHover] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
-    setAccountOpen(false);
-    navigate('/');
+    try {
+      await dispatch(logout()).unwrap();
+      setAccountOpen(false);
+      navigate('/');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
@@ -44,9 +50,9 @@ const Navbar = () => {
             <Link to="/" className="flex items-center">
               <Car className="h-7 w-7 text-orange-500 mr-2" />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-500 to-blue-300 bg-clip-text text-transparent">
-              ReCarNation
-            </span>
-          </Link>
+                ReCarNation
+              </span>
+            </Link>
           </div>
 
           {/* Navigation Links */}
@@ -54,13 +60,13 @@ const Navbar = () => {
             <Link to="/browse" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Browse Cars
             </Link>
-            <Link to="/sellCar" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
+            <Link to="/sell-car" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Sell a Car
             </Link>
             <Link to="/orders" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Orders
             </Link>
-            <Link to="/messaging" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
+            <Link to="/messages" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Messages
             </Link>
           </div>
@@ -92,7 +98,7 @@ const Navbar = () => {
                 className="rounded-full p-2 hover:bg-gray-100 transition-transform duration-100 inline-flex items-center active:scale-95"
                 style={{ transition: "transform 0.12s" }}
               >
-                  <Heart className="text-[#001F3F]" size={22} />
+                <Heart className="text-[#001F3F]" size={22} />
               </span>
               {/* Tooltip */}
               {(heartHover) && (
@@ -114,10 +120,10 @@ const Navbar = () => {
                 style={{ minWidth: 44 }}
               >
                 {/* Avatar or Icon */}
-                {authUser ? (
+                {isAuthenticated ? (
                   <img
-                    src={authUser.photo || "https://via.placeholder.com/32"}
-                    alt={`${authUser.firstName.split(" ")[0]} ${authUser.lastName.split(" ")[0]}`}
+                    src={authUser?.photo || "https://via.placeholder.com/32"}
+                    alt={`${authUser?.firstName || 'User'}`}
                     className="h-8 w-8 rounded-full object-cover border border-gray-300"
                   />
                 ) : (
@@ -128,7 +134,7 @@ const Navbar = () => {
                 {/* Text */}
                 <div className="hidden md:flex md:flex-col items-start mr-2">
                   <span className="text-xs text-gray-500 leading-tight">
-                    {authUser ? `Hello, ${authUser.firstName}` : "Hello, Sign in"}
+                    {isAuthenticated ? `Hello, ${authUser?.firstName}` : "Hello, Sign in"}
                   </span>
                   <span className="text-sm font-bold text-black flex items-center">
                     Account
@@ -143,7 +149,7 @@ const Navbar = () => {
               {/* Dropdown menu */}
               {accountOpen && (
                 <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-100 rounded-lg shadow-xl py-1 z-50 animate-fadeIn">
-                  {authUser ? (
+                  {isAuthenticated ? (
                     <React.Fragment>
                       <Link
                         to="/profile"
@@ -188,14 +194,14 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Hamburger Menu: only on mobile */}
-          <button className="flex md:hidden items-center ml-2 p-2 focus:outline-none hover:bg-gray-100 rounded transition"
-            aria-label="Open menu"
-          >
-            <Menu className="h-7 w-7 text-[#001F3F]" />
-          </button>
+            {/* Hamburger Menu: only on mobile */}
+            <button className="flex md:hidden items-center ml-2 p-2 focus:outline-none hover:bg-gray-100 rounded transition"
+              aria-label="Open menu"
+            >
+              <Menu className="h-7 w-7 text-[#001F3F]" />
+            </button>
+          </div>
         </div>
       </div>
     </nav>

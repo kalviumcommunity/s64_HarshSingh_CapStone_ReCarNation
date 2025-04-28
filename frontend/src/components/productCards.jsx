@@ -1,10 +1,10 @@
 import React, { useState, useEffect, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Car, MapPin, Calendar, Fuel, BarChart3, Heart } from "lucide-react";
+import { Car, MapPin, Calendar, Fuel, BarChart3, Heart, ShoppingCart, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from '@/context/AuthContext';
+import { useSelector } from "react-redux";
 
 // PropTypes are defined in comments for documentation
 /**
@@ -42,53 +42,40 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 // Memoized car card component for better performance
 const CarCard = memo(({ product }) => {
-  const { user } = useAuth();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, token } = useSelector((state) => state.auth);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const checkFavoriteStatus = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const response = await axios.get(`http://localhost:3000/api/favorites/${product._id}`, {
-          headers: {
-            Authorization: `Bearer ${user.token}`
-          }
-        });
-        setIsFavorite(response.data.isFavorite);
-      } catch (error) {
-        console.error('Error checking favorite status:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkFavoriteStatus();
-  }, [product._id, user]);
-
-  const toggleFavorite = async () => {
+  const toggleWishlist = async () => {
     if (!user) {
-      // Redirect to login or show login modal
+      // Redirect to login or show login prompt
       return;
     }
 
+    setIsLoading(true);
     try {
-      const response = await axios.post(
-        `http://localhost:3000/api/favorites/${product._id}`,
-        {},
-        {
+      if (isInWishlist) {
+        await axios.delete(`${import.meta.env.VITE_API_URL}/wishlist/${product._id}`, {
           headers: {
-            Authorization: `Bearer ${user.token}`
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } else {
+        await axios.post(
+          `${import.meta.env.VITE_API_URL}/wishlist`,
+          { carId: product._id },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
-        }
-      );
-      setIsFavorite(response.data.isFavorite);
+        );
+      }
+      setIsInWishlist(!isInWishlist);
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error("Error toggling wishlist:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -96,7 +83,7 @@ const CarCard = memo(({ product }) => {
   const imageUrl = React.useMemo(() => {
     return product.image 
       ? `${API_BASE_URL}/uploads/${product.image}` 
-      : "https://via.placeholder.com/400x300?text=No+Image+Available";
+      : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='16' fill='%23666'%3ENo Image Available%3C/text%3E%3C/svg%3E";
   }, [product.image]);
 
   return (
@@ -114,16 +101,17 @@ const CarCard = memo(({ product }) => {
           </Badge>
         )}
         <button 
-          onClick={toggleFavorite}
+          onClick={toggleWishlist}
           disabled={isLoading}
-          className={`absolute top-2 left-2 p-1.5 rounded-full ${
-            isFavorite ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600'
-          } hover:bg-red-500 hover:text-white transition-colors duration-300 ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          className={`absolute top-2 right-2 p-2 rounded-full ${
+            isInWishlist ? 'bg-red-500' : 'bg-white'
+          } shadow-md hover:bg-red-50 transition-colors`}
         >
-          <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+          <Heart
+            className={`h-5 w-5 ${
+              isInWishlist ? 'text-white' : 'text-red-500'
+            }`}
+          />
         </button>
       </div>
       

@@ -1,13 +1,15 @@
-import { useState, useCallback, useContext } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from 'react-redux';
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImagePlus, Check, AlertCircle, Car, Upload, X } from "lucide-react";
-import { AuthContext } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
+import { logout } from "../redux/authSlice";
+import { setError } from "../store/slices/errorSlice";
 
 // Form validation schema
 const REQUIRED_FIELDS = {
@@ -22,7 +24,8 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 const SellCarPage = () => {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  const dispatch = useDispatch();
+  const { user, token } = useSelector((state) => state.auth);
   const [activeStep, setActiveStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -43,6 +46,14 @@ const SellCarPage = () => {
     images: []
   });
   const [errors, setErrors] = useState({});
+
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!user || !token) {
+      toast.error('Please login to create a listing');
+      navigate('/login');
+    }
+  }, [user, token, navigate]);
 
   // Cleanup function for image previews
   const cleanup = useCallback(() => {
@@ -185,31 +196,32 @@ const SellCarPage = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+    
+    if (!token) {
+      dispatch(setError("Please login to sell a car"));
+      navigate('/login');
+      return;
+    }
 
     try {
-      const formDataToSend = new FormData();
+      setIsSubmitting(true);
+      setError(null);
       
-      // Append all form fields
+      const formDataToSend = new FormData();
       Object.keys(formData).forEach(key => {
-        if (key !== 'images') {
+        if (key === 'images') {
+          formData.images.forEach(file => {
+            formDataToSend.append('images', file);
+          });
+        } else {
           formDataToSend.append(key, formData[key]);
         }
       });
 
-      // Append images
-      formData.images.forEach((img, index) => {
-        formDataToSend.append('images', img.file);
-      });
-
-      // Add user ID
-      formDataToSend.append('userId', user._id);
-
-      const response = await axios.post('http://localhost:3000/api/products/', formDataToSend, {
+      const response = await axios.post(`${API_BASE_URL}/products`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -241,9 +253,15 @@ const SellCarPage = () => {
       }
     } catch (err) {
       console.error('Error creating listing:', err);
-      const errorMessage = err.response?.data?.message || 'Failed to create listing. Please try again.';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      if (err.response?.status === 401) {
+        toast.error('Your session has expired. Please login again.');
+        dispatch(logout());
+        navigate('/login');
+      } else {
+        const errorMessage = err.response?.data?.message || 'Failed to create listing. Please try again.';
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
