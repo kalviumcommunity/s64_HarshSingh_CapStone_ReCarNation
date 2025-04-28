@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImagePlus, Check, AlertCircle, Car, Upload, X } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { logout } from "../redux/authSlice";
+import { logout } from "../store/slices/authSlice";
 import { setError } from "../store/slices/errorSlice";
 
 // Form validation schema

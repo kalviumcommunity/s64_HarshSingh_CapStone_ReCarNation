@@ -14,7 +14,9 @@ export const loginUser = createAsyncThunk(
     });
 
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, credentials);
+      const response = await axios.post(`${API_URL}/auth/login`, credentials, {
+        withCredentials: true
+      });
       const { user, token } = response.data;
       
       console.log('[authSlice.js/loginUser] Login successful:', {
@@ -23,7 +25,6 @@ export const loginUser = createAsyncThunk(
         timestamp: new Date().toISOString()
       });
 
-      localStorage.setItem('token', token);
       return { user, token };
     } catch (error) {
       console.error('[authSlice.js/loginUser] Login failed:', {
@@ -71,25 +72,16 @@ export const checkAuth = createAsyncThunk(
     console.log('[authSlice.js/checkAuth] Checking authentication status');
     
     try {
-      const token = localStorage.getItem('token');
-      console.log('[authSlice.js/checkAuth] Token status:', {
-        hasToken: !!token,
-        timestamp: new Date().toISOString()
-      });
-
-      if (!token) {
-        console.log('[authSlice.js/checkAuth] No token found');
-        return rejectWithValue('No token found');
-      }
-
       const response = await axios.get(`${API_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        withCredentials: true
       });
+
+      // Get token from response or cookies
+      const token = response.data.token || document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 
       console.log('[authSlice.js/checkAuth] Auth check successful:', {
         userId: response.data._id,
+        hasToken: !!token,
         timestamp: new Date().toISOString()
       });
 
@@ -100,7 +92,6 @@ export const checkAuth = createAsyncThunk(
         status: error.response?.status,
         timestamp: new Date().toISOString()
       });
-      localStorage.removeItem('token');
       return rejectWithValue(error.response?.data?.message || 'Authentication failed');
     }
   }
@@ -128,7 +119,6 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.token = null;
-      localStorage.removeItem('token');
     },
     clearError: (state) => {
       console.log('[authSlice.js/clearError] Clearing error state');
