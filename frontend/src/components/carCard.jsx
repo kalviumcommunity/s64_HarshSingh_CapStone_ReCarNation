@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { Button, Card, Container, Row, Col, Modal } from 'react-bootstrap';
 
 const CarList = () => {
@@ -34,7 +33,7 @@ const CarList = () => {
   };
 
   const handleDeleteCar = async () => {
-    try {d
+    try {
       await axios.delete(`http://localhost:3000/api/products/${deletingCarId}`);
       // Refresh the car list after deletion
       fetchCars();
