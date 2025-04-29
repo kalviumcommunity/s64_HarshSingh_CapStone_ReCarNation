@@ -200,3 +200,38 @@ exports.deleteUser = async (req, res) => {
     });
   }
 };
+
+// Get Current User
+exports.getCurrentUser = async (req, res) => {
+  try {
+    // The user is already attached to the request by the isAuthenticated middleware
+    const user = req.user;
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get the full user data from the database
+    const userData = await User.findById(user.id).select('-password');
+    
+    if (!userData) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Return user data in the format expected by the frontend
+    const formattedUser = {
+      _id: userData._id,
+      firstName: userData.name.split(' ')[0], // Assuming first name is the first part of the name
+      lastName: userData.name.split(' ').slice(1).join(' '), // Rest of the name as last name
+      email: userData.email,
+      photo: userData.profilePicture, // Map profilePicture to photo
+      role: userData.role,
+      isVerified: userData.isVerified
+    };
+
+    res.status(200).json({ user: formattedUser });
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
