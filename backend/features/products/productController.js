@@ -1,6 +1,7 @@
 const Product = require('../../model/productsModel');
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
+const mongoose = require('mongoose');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -13,10 +14,6 @@ const createProduct = async (req, res) => {
     try {
         console.log('Request body:', req.body);
         console.log('Request files:', req.files);
-
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: 'At least one image is required' });
-        }
 
         const {
             make,
@@ -38,20 +35,27 @@ const createProduct = async (req, res) => {
             return res.status(400).json({ message: 'All required fields must be filled' });
         }
 
-        // Upload images to Cloudinary
-        const imageUrls = await Promise.all(
-            req.files.map(async (file) => {
-                try {
-                    const result = await cloudinary.uploader.upload(file.path, {
-                        folder: 'car_listings'
-                    });
-                    return result.secure_url;
-                } catch (uploadError) {
-                    console.error('Error uploading image:', uploadError);
-                    throw new Error('Failed to upload images');
-                }
-            })
-        );
+        // Upload images to Cloudinary if present
+        let imageUrls = [];
+        if (req.files && req.files.length > 0) {
+            imageUrls = await Promise.all(
+                req.files.map(async (file) => {
+                    try {
+                        const result = await cloudinary.uploader.upload(file.path, {
+                            folder: 'car_listings'
+                        });
+                        return result.secure_url;
+                    } catch (uploadError) {
+                        console.error('Error uploading image:', uploadError);
+                        throw new Error('Failed to upload images');
+                    }
+                })
+            );
+        }
+
+        // if (!mongoose.Types.ObjectId.isValid(userId)) {
+        //     return res.status(400).json({ message: 'Invalid userId' });
+        // }
 
         // Create new product
         const newProduct = new Product({
@@ -67,7 +71,7 @@ const createProduct = async (req, res) => {
             location,
             contactNumber,
             images: imageUrls,
-            userId
+            listedBy: new mongoose.Types.ObjectId(userId)
         });
 
         const savedProduct = await newProduct.save();
