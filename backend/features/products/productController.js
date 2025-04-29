@@ -143,6 +143,7 @@ const updateProduct = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error updating product', error: error.message });
     }
+
 };
 
 const deleteProduct = async (req, res) => {
@@ -164,3 +165,4 @@ module.exports = {
     updateProduct,
     deleteProduct
 };
+
