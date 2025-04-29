@@ -1,111 +1,30 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, AuthContext, useAuth } from '@/context/AuthContext';
-import Home from '@/pages/home';
-import Login from '@/pages/auth';
-import Profile from '@/pages/profile';
-import SellCar from '@/pages/sellCar';
-import BrowseCar from '@/pages/BrowseCars';
-import AboutUs from '@/pages/static/AboutUs';
-import Contact from '@/pages/static/Contact';
-import HelpCenter from '@/pages/static/HelpCenter';
-import TermsAndServices from '@/pages/static/TermsAndServices';
-import PrivacyPolicy from '@/pages/static/PrivacyPolicy';
-import MessagingPage from './pages/messegingPage';
-import OrdersPage from './pages/orders';
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { useContext } from "react";
-import Wishlist from '@/pages/Wishlist';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store';
+import AppRoutes from './routes/router';
+import { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { checkAuth } from './store/slices/authSlice';
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-  return children;
-};
+function AppContent() {
+  const dispatch = useDispatch();
 
-// Layout Component for pages with header and footer
-const Layout = ({ children }) => {
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-grow">
-        {children}
-      </main>
-      <Footer />
-    </div>
+    <Router>
+      <AppRoutes />
+    </Router>
   );
-};
+}
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout><Home /></Layout>} />
-          <Route path="/home" element={<Layout><Home /></Layout>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Login />} />
-          <Route path="/about" element={<Layout><AboutUs /></Layout>} />
-          <Route path="/contact" element={<Layout><Contact /></Layout>} />
-          <Route path="/help" element={<Layout><HelpCenter /></Layout>} />
-          <Route path="/terms" element={<Layout><TermsAndServices /></Layout>} />
-          <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
-          <Route path="/browse" element={<Layout><BrowseCar /></Layout>} />
-          
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Layout><Profile /></Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sellCar"
-            element={
-              <ProtectedRoute>
-                <Layout><SellCar /></Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders"
-            element={
-              <ProtectedRoute>
-                <Layout><OrdersPage /></Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/messaging/:id"
-            element={
-              <ProtectedRoute>
-                <Layout><MessagingPage /></Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/messaging/"
-            element={
-              <ProtectedRoute>
-                <Layout><MessagingPage /></Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/wishlist"
-            element={
-              <ProtectedRoute>
-                <Layout><Wishlist /></Layout>
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
   );
 }
 

@@ -72,7 +72,7 @@ const BrowseCarPage = () => {
                 <p className="text-red-500 mb-4">{error}</p>
                 <Button 
                   onClick={() => window.location.reload()} 
-                  className="bg-brand-orange hover:bg-brand-lightOrange text-white"
+                  className="bg-orange-600 hover:bg-orange-500 text-white"
                 >
                   Try Again
                 </Button>

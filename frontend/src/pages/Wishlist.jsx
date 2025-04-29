@@ -1,110 +1,113 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { Heart, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-
 
 const Wishlist = () => {
-  const { user } = useAuth();
+  const { user, token } = useSelector((state) => state.auth);
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchWishlist();
-  }, []);
+    const fetchWishlist = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/wishlist`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setWishlist(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to fetch wishlist");
+        setLoading(false);
+      }
+    };
 
-  const fetchWishlist = async () => {
+    if (token) {
+      fetchWishlist();
+    }
+  }, [token]);
+
+  const removeFromWishlist = async (carId) => {
     try {
-      const response = await axios.get('http://localhost:3000/api/wishlist', {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/wishlist/${carId}`, {
         headers: {
-          Authorization: `Bearer ${user.token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      setWishlist(response.data);
-    } catch (error) {
-      console.error('Error fetching wishlist:', error);
-      toast.error('Failed to load wishlist');
-    } finally {
-      setLoading(false);
+      setWishlist(wishlist.filter((item) => item._id !== carId));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to remove from wishlist");
     }
   };
 
-  const removeFromWishlist = async (productId) => {
-    try {
-      await axios.delete(`http://localhost:3000/api/wishlist/${productId}`, {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
-      });
-      setWishlist(wishlist.filter(item => item.productId._id !== productId));
-      toast.success('Removed from wishlist');
-    } catch (error) {
-      console.error('Error removing from wishlist:', error);
-      toast.error('Failed to remove from wishlist');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!user) return <div>Please login to view your wishlist</div>;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="max-w-7xl mx-auto py-8 px-4 flex-grow">
-        <h1 className="text-3xl font-bold mb-8">My Wishlist</h1>
-        
-        {wishlist.length === 0 ? (
-          <div className="text-center py-12">
-            <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Your wishlist is empty</p>
-            <Link to="/browse" className="text-blue-600 hover:text-blue-800 mt-4 inline-block">
-              Browse Cars
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {wishlist.map((item) => (
-              <div key={item._id} className="border rounded-lg overflow-hidden">
-                <div className="relative">
-                  <img
-                    src={item.productId.images[0]}
-                    alt={item.productId.make}
-                    className="w-full h-48 object-cover"
-                  />
-                  <button
-                    onClick={() => removeFromWishlist(item.productId._id)}
-                    className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
-                  >
-                    <Trash2 className="h-5 w-5 text-red-600" />
-                  </button>
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold">
-                    {item.productId.year} {item.productId.make} {item.productId.model}
-                  </h3>
-                  <p className="text-gray-600">${item.productId.price.toLocaleString()}</p>
-                  <p className="text-gray-600">{item.productId.mileage.toLocaleString()} miles</p>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Your Wishlist</h1>
+      {wishlist.length === 0 ? (
+        <div className="text-center py-12">
+          <Heart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Your Wishlist is Empty
+          </h2>
+          <p className="text-gray-600 mb-6">
+            You haven't added any cars to your wishlist yet.
+          </p>
+          <Link
+            to="/browse"
+            className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+          >
+            Browse Cars
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {wishlist.map((car) => (
+            <div
+              key={car._id}
+              className="bg-white rounded-lg shadow overflow-hidden"
+            >
+              <div className="relative">
+                <img
+                  src={car.images[0] || "https://via.placeholder.com/300x200"}
+                  alt={`${car.make} ${car.model}`}
+                  className="w-full h-48 object-cover"
+                />
+                <button
+                  onClick={() => removeFromWishlist(car._id)}
+                  className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-50"
+                >
+                  <Trash2 className="h-5 w-5 text-red-500" />
+                </button>
+              </div>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold">
+                  {car.make} {car.model}
+                </h3>
+                <p className="text-gray-600 mb-2">{car.year}</p>
+                <p className="text-xl font-bold text-blue-600">
+                  ${car.price.toLocaleString()}
+                </p>
+                <div className="mt-4">
                   <Link
-                    to={`/car/${item.productId._id}`}
-                    className="mt-4 inline-block text-blue-600 hover:text-blue-800"
+                    to={`/car/${car._id}`}
+                    className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
                   >
                     View Details
                   </Link>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
