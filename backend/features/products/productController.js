@@ -1,25 +1,9 @@
 const Product = require('../../model/productsModel')
 
-class ProductController{
+class ProductContoller{
     static async createProduct(req, res){
         try{
-            const {name, company, model, year, description, KilometersTraveled} = req.body;
-
-            if(!name || !company || !model || !year){
-               return res.status(400).json({message: "All fields are required."})
-            }
-
-            const product = new Product({
-                 name,
-                 company,
-                 model,
-                 year,
-                 description,
-                 KilometersTraveled,
-                 listedBy: req.user._id,
-                 image: imagePath 
-                });
-            
+            const product = new Product(req.body);
             const savedProduct = await product.save();
             res.status(201).json(savedProduct);
         }
@@ -27,7 +11,7 @@ class ProductController{
             res.status(400).json({error : error.message});
         }
     }
-    static async getAllProducts(req, res){
+    static async getAllProduct(req, res){
         try{
             const products = await Product.find();
             res.status(200).json({
@@ -106,5 +90,3 @@ class ProductController{
 }
 
 module.exports = ProductContoller;
-
-
