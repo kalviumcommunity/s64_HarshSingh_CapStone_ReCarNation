@@ -1,16 +1,51 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, User, Car, ShoppingCart, MessageSquare, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button"; // Corrected import
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Search,
+  User,
+  MessageSquare,
+  ShoppingCart,
+  Heart,
+  Menu,
+  ChevronDown,
+  LogOut,
+  Car
+} from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../store/slices/authSlice";
+
+// Just for demo: replace with actual login state and user data
+const isLoggedIn = false;
+const user = {
+  firstName: "Alex",
+  photo: "https://randomuser.me/api/portraits/men/32.jpg",
+};
+// For wishlist, simulate 1+ items triggers a filled heart
+const wishlistCount = 0;
 
 const Navbar = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isLoggedIn = true; // Replace this with real auth state
+  const { user: authUser, isAuthenticated } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const [accountOpen, setAccountOpen] = useState(false);
+  // Tooltip on heart
+  const [heartHover, setHeartHover] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap();
+      setAccountOpen(false);
+      navigate('/');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
+          {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center">
               <Car className="h-7 w-7 text-orange-500 mr-2" />
@@ -20,115 +55,155 @@ const Navbar = () => {
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-6">
-            <Link to="/listings" className="text-gray-600 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center gap-7">
+            <Link to="/browse" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Browse Cars
             </Link>
-            <Link to="/sell-car" className="text-gray-600 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+            <Link to="/sell-car" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
               Sell a Car
             </Link>
-            {isLoggedIn && (
-              <>
-                <Link to="/orders" className="text-gray-600 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors duration-200">
-                  <ShoppingCart className="h-4 w-4 mr-1" /> Orders
-                </Link>
-                <Link to="/messaging" className="text-gray-600 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors duration-200">
-                  <MessageSquare className="h-4 w-4 mr-1" /> Messages
-                </Link>
-              </>
-            )}
-            <div className="relative text-gray-600">
-              <input
-                type="search"
-                name="search"
-                placeholder="Search..."
-                className="bg-gray-50 h-9 px-5 pr-10 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-              />
-              <button type="submit" className="absolute right-0 top-0 mt-2.5 mr-4">
-                <Search className="h-4 w-4" />
-              </button>
-            </div>
-            {isLoggedIn ? (
-              <Button variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
-                <Link to="/profile" className="flex items-center">
-                  <User className="h-4 w-4 mr-2" /> Profile
-                </Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
-                  <Link to="/login">Login</Link>
-                </Button>
-                <Button className="bg-orange-500 hover:bg-orange-400 text-white">
-                  <Link to="/register">Register</Link>
-                </Button>
-              </>
-            )}
+            <Link to="/orders" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
+              Orders
+            </Link>
+            <Link to="/messages" className="text-[#001F3F] hover:text-orange-600 font-medium transition-colors duration-200">
+              Messages
+            </Link>
           </div>
 
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-blue-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+          {/* Search */}
+          <div className="hidden md:flex items-center">
+            <div className="relative">
+              <input
+                type="search"
+                placeholder="Search..."
+                className="w-56 pl-4 pr-10 py-2 rounded-md border bg-[#F6F7FA] focus:ring-2 focus:ring-[#1EAEDB] transition"
+                style={{ fontFamily: "inherit" }}
+              />
+              <Search className="absolute right-3 top-2.5 text-gray-400 h-5 w-5" />
+            </div>
+          </div>
+
+          {/* Right section */}
+          <div className="flex items-center gap-2 md:gap-3 ml-2 relative">
+            {/* Wishlist Heart */}
+            <Link
+              to="/wishlist"
+              className="relative group"
+              onMouseEnter={() => setHeartHover(true)}
+              onMouseLeave={() => setHeartHover(false)}
+              aria-label="Your Wishlist"
             >
-              <span className="sr-only">Open main menu</span>
-              {isMobileMenuOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
+              <span
+                className="rounded-full p-2 hover:bg-gray-100 transition-transform duration-100 inline-flex items-center active:scale-95"
+                style={{ transition: "transform 0.12s" }}
+              >
+                <Heart className="text-[#001F3F]" size={22} />
+              </span>
+              {/* Tooltip */}
+              {(heartHover) && (
+                <span className="absolute left-1/2 -translate-x-1/2 top-11 whitespace-nowrap bg-black text-white text-xs rounded px-2 py-1 z-20 shadow animate-fadeIn min-w-max">
+                  Your Wishlist
+                </span>
+              )}
+            </Link>
+            {/* Divider */}
+            <span className="hidden md:inline-block w-px h-7 bg-[#E6E8EB] mx-2"></span>
+
+            {/* Profile area */}
+            <div className="relative select-none">
+              <button
+                className="flex items-center gap-2 md:px-2 py-1 rounded-full bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#1EAEDB] transition-transform duration-100 active:scale-95"
+                onClick={() => setAccountOpen((s) => !s)}
+                aria-haspopup="menu"
+                aria-expanded={accountOpen}
+                style={{ minWidth: 44 }}
+              >
+                {/* Avatar or Icon */}
+                {isAuthenticated ? (
+                  <img
+                    src={authUser?.photo || "https://via.placeholder.com/32"}
+                    alt={`${authUser?.firstName || 'User'}`}
+                    className="h-8 w-8 rounded-full object-cover border border-gray-300"
+                  />
+                ) : (
+                  <span className="flex-shrink-0 bg-[#001F3F] rounded-full h-8 w-8 flex items-center justify-center">
+                    <User className="text-white" size={20} />
+                  </span>
+                )}
+                {/* Text */}
+                <div className="hidden md:flex md:flex-col items-start mr-2">
+                  <span className="text-xs text-gray-500 leading-tight">
+                    {isAuthenticated ? `Hello, ${authUser?.firstName}` : "Hello, Sign in"}
+                  </span>
+                  <span className="text-sm font-bold text-black flex items-center">
+                    Account
+                    <ChevronDown className="h-4 w-4 ml-1 text-gray-400" />
+                  </span>
+                </div>
+                {/* Text for mobile */}
+                <span className="md:hidden text-sm font-bold text-black flex items-center">
+                  <ChevronDown className="h-4 w-4 ml-1 text-gray-400" />
+                </span>
+              </button>
+              {/* Dropdown menu */}
+              {accountOpen && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-100 rounded-lg shadow-xl py-1 z-50 animate-fadeIn">
+                  {isAuthenticated ? (
+                    <React.Fragment>
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-sm text-[#001F3F] hover:bg-gray-100 transition-colors"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        to="/orders"
+                        className="block px-4 py-2 text-sm text-[#001F3F] hover:bg-gray-100 transition-colors"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Orders
+                      </Link>
+                      <button
+                        className="flex items-center w-full text-left px-4 py-2 text-sm text-[#001F3F] hover:bg-gray-100 transition-colors"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </button>
+                    </React.Fragment>
+                  ) : (
+                    <React.Fragment>
+                      <Link
+                        to="/login"
+                        className="block px-4 py-2 text-sm text-[#001F3F] hover:bg-gray-100 transition-colors"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        to="/register"
+                        className="block px-4 py-2 text-sm text-[#001F3F] hover:bg-gray-100 transition-colors"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Register
+                      </Link>
+                    </React.Fragment>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Hamburger Menu: only on mobile */}
+            <button className="flex md:hidden items-center ml-2 p-2 focus:outline-none hover:bg-gray-100 rounded transition"
+              aria-label="Open menu"
+            >
+              <Menu className="h-7 w-7 text-[#001F3F]" />
             </button>
           </div>
         </div>
       </div>
-
-      {isMobileMenuOpen && (
-        <div className="md:hidden animate-fadeIn">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white shadow-lg rounded-b-lg">
-            <Link to="/listings" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-500 hover:bg-gray-50">
-              Browse Cars
-            </Link>
-            <Link to="/sell-car" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-500 hover:bg-gray-50">
-              Sell a Car
-            </Link>
-            {isLoggedIn && (
-              <>
-                <Link to="/orders" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-500 hover:bg-gray-50 flex items-center">
-                  <ShoppingCart className="h-4 w-4 mr-2" /> Orders
-                </Link>
-                <Link to="/messaging" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-500 hover:bg-gray-50 flex items-center">
-                  <MessageSquare className="h-4 w-4 mr-2" /> Messages
-                </Link>
-              </>
-            )}
-            <div className="relative text-gray-600 px-3 py-2">
-              <input
-                type="search"
-                name="search"
-                placeholder="Search..."
-                className="bg-gray-50 h-10 px-5 pr-10 rounded-full text-sm focus:outline-none w-full"
-              />
-              <button type="submit" className="absolute right-0 top-0 mt-5 mr-7">
-                <Search className="h-4 w-4" />
-              </button>
-            </div>
-            {isLoggedIn ? (
-              <div className="px-3 py-2">
-                <Button variant="outline" className="w-full border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center">
-                  <Link to="/profile" className="flex items-center">
-                    <User className="h-4 w-4 mr-2" /> Profile
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="flex space-x-2 px-3 py-2">
-                <Button variant="outline" className="flex-1 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
-                  <Link to="/login">Login</Link>
-                </Button>
-                <Button className="flex-1 bg-orange-500 hover:bg-orange-400 text-white">
-                  <Link to="/register">Register</Link>
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </nav>
   );
 };

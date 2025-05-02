@@ -1,18 +1,30 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Authentication from "./pages/auth";
-import Profile from './pages/profile'
+import { BrowserRouter as Router } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store';
+import AppRoutes from './routes/router';
+import { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { checkAuth } from './store/slices/authSlice';
+
+function AppContent() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
+
+  return (
+    <Router>
+      <AppRoutes />
+    </Router>
+  );
+}
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<Authentication />} />
-        <Route path="/register" element={<Authentication />} />
-        <Route path="/profile" element={<Profile />} />
-
-      </Routes>
-    </Router>
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
   );
 }
 

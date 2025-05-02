@@ -6,8 +6,7 @@ const { isAuthenticated } = require('../auth/authMiddleware/authMiddleware');
 
 
 router.get('/', productController.getAllProducts);
-router.post('/', isAuthenticated, productController.createProduct);
-router.post('/', isAuthenticated, upload.single('image'), productController.createProduct);
+router.post('/', isAuthenticated, upload.array('images', 10), productController.createProduct);
 router.put('/:id', isAuthenticated, productController.updateProduct);
 router.delete('/:id', productController.updateProduct);
 
