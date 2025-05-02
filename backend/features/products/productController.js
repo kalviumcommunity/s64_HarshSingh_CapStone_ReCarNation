@@ -29,8 +29,7 @@ const createProduct = async (req, res) => {
             fuelType,
             description,
             location,
-            contactNumber,
-            userId
+            contactNumber
         } = req.body;
 
         // Validate required fields
@@ -38,22 +37,25 @@ const createProduct = async (req, res) => {
             return res.status(400).json({ message: 'All required fields must be filled' });
         }
 
-        // Upload images to Cloudinary
-        const imageUrls = await Promise.all(
+        const images = await Promise.all(
             req.files.map(async (file) => {
-                try {
-                    const result = await cloudinary.uploader.upload(file.path, {
-                        folder: 'car_listings'
-                    });
-                    return result.secure_url;
-                } catch (uploadError) {
-                    console.error('Error uploading image:', uploadError);
-                    throw new Error('Failed to upload images');
-                }
+              try {
+                const result = await cloudinary.uploader.upload(file.path, {
+                  folder: 'car_listings'
+                });
+                return {
+                  url: result.secure_url,
+                  publicId: result.public_id
+                };
+              } catch (uploadError) {
+                console.error('Error uploading image:', uploadError);
+                throw new Error('Failed to upload images');
+              }
             })
-        );
+          );
+          
 
-        // Create new product
+        // Create new product with proper image format and listedBy field
         const newProduct = new Product({
             make,
             model,
@@ -66,8 +68,8 @@ const createProduct = async (req, res) => {
             description,
             location,
             contactNumber,
-            images: imageUrls,
-            userId
+            images: images,
+            listedBy: req.user._id // Get from authenticated user
         });
 
         const savedProduct = await newProduct.save();

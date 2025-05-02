@@ -18,9 +18,7 @@ const Wishlist = () => {
   const fetchWishlist = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/wishlist', {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
+        withCredentials: true
       });
       setWishlist(response.data);
     } catch (error) {
@@ -34,9 +32,7 @@ const Wishlist = () => {
   const removeFromWishlist = async (productId) => {
     try {
       await axios.delete(`http://localhost:3000/api/wishlist/${productId}`, {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
+        withCredentials: true
       });
       setWishlist(wishlist.filter(item => item.productId._id !== productId));
       toast.success('Removed from wishlist');

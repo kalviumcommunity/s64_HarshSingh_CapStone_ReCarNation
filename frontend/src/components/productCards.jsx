@@ -43,52 +43,59 @@ const API_BASE_URL = 'http://localhost:3000/api';
 // Memoized car card component for better performance
 const CarCard = memo(({ product }) => {
   const { user } = useAuth();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkFavoriteStatus = async () => {
+    const checkWishlistStatus = async () => {
       if (!user) {
         setIsLoading(false);
         return;
       }
 
       try {
-        const response = await axios.get(`http://localhost:3000/api/favorites/${product._id}`, {
-          headers: {
-            Authorization: `Bearer ${user.token}`
-          }
+        const response = await axios.get('http://localhost:3000/api/wishlist', {
+          withCredentials: true
         });
-        setIsFavorite(response.data.isFavorite);
+        // Check if the current product is in the wishlist
+        const isProductInWishlist = response.data.some(item => 
+          item.productId._id === product._id
+        );
+        setIsInWishlist(isProductInWishlist);
       } catch (error) {
-        console.error('Error checking favorite status:', error);
+        console.error('Error checking wishlist status:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkFavoriteStatus();
+    checkWishlistStatus();
   }, [product._id, user]);
 
-  const toggleFavorite = async () => {
+  const toggleWishlist = async () => {
     if (!user) {
       // Redirect to login or show login modal
       return;
     }
 
     try {
-      const response = await axios.post(
-        `http://localhost:3000/api/favorites/${product._id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`
-          }
-        }
-      );
-      setIsFavorite(response.data.isFavorite);
+      if (isInWishlist) {
+        // Remove from wishlist
+        await axios.delete(`http://localhost:3000/api/wishlist/${product._id}`, {
+          withCredentials: true
+        });
+        setIsInWishlist(false);
+      } else {
+        // Add to wishlist
+        await axios.post('http://localhost:3000/api/wishlist', {
+          productId: product._id
+        }, {
+          withCredentials: true
+        });
+        setIsInWishlist(true);
+      }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error('Error toggling wishlist:', error);
     }
   };
 
@@ -114,16 +121,16 @@ const CarCard = memo(({ product }) => {
           </Badge>
         )}
         <button 
-          onClick={toggleFavorite}
+          onClick={toggleWishlist}
           disabled={isLoading}
           className={`absolute top-2 left-2 p-1.5 rounded-full ${
-            isFavorite ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600'
+            isInWishlist ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600'
           } hover:bg-red-500 hover:text-white transition-colors duration-300 ${
             isLoading ? 'opacity-50 cursor-not-allowed' : ''
           }`}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={isInWishlist ? "Remove from wishlists" : "Add to wishlists"}
         >
-          <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+          <Heart className={`h-3.5 w-3.5 ${isInWishlist ? 'fill-current' : ''}`} />
         </button>
       </div>
       

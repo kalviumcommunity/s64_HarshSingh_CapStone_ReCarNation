@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-// import Header from "@/components/Header";
-// import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +20,7 @@ const CarDetailsPage = () => {
     const fetchCarDetails = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/cars/${id}`);
+        const response = await fetch(`http://localhost:3000/api/products/${id}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch car details: ${response.status}`);
@@ -45,14 +43,12 @@ const CarDetailsPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
-        {/* <Header /> */}
         <main className="flex-grow py-8 bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-t-brand-blue border-r-brand-blue border-b-gray-200 border-l-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-xl font-medium text-gray-700">Loading car details...</p>
           </div>
         </main>
-        {/* <Footer /> */}
       </div>
     );
   }
@@ -345,7 +341,6 @@ const CarDetailsPage = () => {
         </div>
       </main>
       
-      {/* <Footer /> */}
     </div>
   );
 };

@@ -44,8 +44,8 @@ exports.login = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: "Strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
       maxAge: 3600000,
     });
 
@@ -101,7 +101,7 @@ exports.googleLogin = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      sameSite: "Lax",
       maxAge: 3600000,
     });
 

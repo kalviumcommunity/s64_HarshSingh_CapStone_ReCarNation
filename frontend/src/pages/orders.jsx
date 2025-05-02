@@ -15,9 +15,7 @@ const OrdersPage = () => {
       try {
         setLoading(true);
         const response = await axios.get('http://localhost:3000/api/orders', {
-          headers: {
-            'Authorization': `Bearer ${user?.token}`
-          }
+          withCredentials: true
         });
         setOrders(response.data.orders);
         setError(null);
