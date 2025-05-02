@@ -85,16 +85,18 @@ const createProduct = async (req, res) => {
             details: error.stack 
         });
     }
+
+    static async getAllProduct(req, res){
+        try{
+            const products = await Product.find();
+            res.status(200).json({
+                message : 'Fetched all products successfully!',
+                products
+            });
+
 };
 
-const getAllProducts = async (req, res) => {
-    try {
-        const { featured, limit, sort, order } = req.query;
-        let query = {};
 
-        // If featured is true, only return featured cars
-        if (featured === 'true') {
-            query.isFeatured = true;
         }
 
         // Build sort object
@@ -156,6 +158,10 @@ const deleteProduct = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error deleting product', error: error.message });
     }
+}
+
+module.exports = ProductContoller;
+
 };
 
 module.exports = {
@@ -165,4 +171,5 @@ module.exports = {
     updateProduct,
     deleteProduct
 };
+
 
