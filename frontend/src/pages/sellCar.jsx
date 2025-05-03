@@ -246,8 +246,8 @@ const SellCarPage = () => {
             });
             setActiveStep(1);
             setUploadProgress(0);
-            // Redirect to the newly created listing
-            navigate(`/car/${response.data._id}`);
+            // Redirect to home page
+            navigate('/');
         }
     } catch (err) {
         console.error('Error creating listing:', err);

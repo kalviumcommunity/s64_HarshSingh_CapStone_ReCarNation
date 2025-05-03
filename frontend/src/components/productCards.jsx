@@ -101,10 +101,14 @@ const CarCard = memo(({ product }) => {
 
   // Memoize image URL calculation
   const imageUrl = React.useMemo(() => {
-    return product.image 
-      ? `${API_BASE_URL}/uploads/${product.image}` 
-      : "https://via.placeholder.com/400x300?text=No+Image+Available";
-  }, [product.image]);
+    if (!product.images || product.images.length === 0) {
+      return "https://via.placeholder.com/400x300?text=No+Image+Available";
+    }
+    
+    // Handle both Cloudinary and local image formats
+    const firstImage = product.images[0];
+    return firstImage?.url || firstImage || "https://via.placeholder.com/400x300?text=No+Image+Available";
+  }, [product.images]);
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
@@ -114,6 +118,9 @@ const CarCard = memo(({ product }) => {
           alt={`${product.company} ${product.model}`}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
           loading="lazy"
+          onError={(e) => {
+            e.target.src = "https://via.placeholder.com/400x300?text=No+Image+Available";
+          }}
         />
         {product.isFeatured && (
           <Badge className="absolute top-2 right-2 bg-orange-600 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full">

@@ -17,6 +17,8 @@ import Footer from "@/components/Footer";
 import { useContext } from "react";
 import Wishlist from '@/pages/Wishlist';
 import CarDetails from '@/pages/carDetails';
+import ProductCars from '@/pages/productCars';
+import ProfileSettings from '@/pages/profileSettings';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -55,12 +57,21 @@ function App() {
           <Route path="/terms" element={<Layout><TermsAndServices /></Layout>} />
           <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
           <Route path="/browse" element={<Layout><BrowseCar /></Layout>} />
+          <Route path="/cars" element={<Layout><ProductCars /></Layout>} />
           <Route path="/car/:id" element={<Layout><CarDetails /></Layout>} />
           <Route
             path="/profile"
             element={
               <ProtectedRoute>
                 <Layout><Profile /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile-settings"
+            element={
+              <ProtectedRoute>
+                <Layout><ProfileSettings /></Layout>
               </ProtectedRoute>
             }
           />
