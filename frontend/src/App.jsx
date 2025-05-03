@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext, useAuth } from '@/context/AuthContext';
 import Home from '@/pages/home';
@@ -20,30 +21,24 @@ import CarDetails from '@/pages/carDetails';
 import ProductCars from '@/pages/productCars';
 import ProfileSettings from '@/pages/profileSettings';
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-  return children;
-};
 
-// Layout Component for pages with header and footer
-const Layout = ({ children }) => {
+function AppContent() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-grow">
-        {children}
-      </main>
-      <Footer />
-    </div>
+    <Router>
+      <AppRoutes />
+    </Router>
   );
-};
+}
 
 function App() {
   return (
+
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -118,6 +113,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+
   );
 }
 

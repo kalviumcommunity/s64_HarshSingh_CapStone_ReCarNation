@@ -1,10 +1,10 @@
 import React, { useState, useEffect, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Car, MapPin, Calendar, Fuel, BarChart3, Heart } from "lucide-react";
+import { Car, MapPin, Calendar, Fuel, BarChart3, Heart, ShoppingCart, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from '@/context/AuthContext';
+import { useSelector } from "react-redux";
 
 // PropTypes are defined in comments for documentation
 /**
@@ -42,6 +42,7 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 // Memoized car card component for better performance
 const CarCard = memo(({ product }) => {
+
   const { user } = useAuth();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,14 +73,17 @@ const CarCard = memo(({ product }) => {
     checkWishlistStatus();
   }, [product._id, user]);
 
+
   const toggleWishlist = async () => {
     if (!user) {
-      // Redirect to login or show login modal
+      // Redirect to login or show login prompt
       return;
     }
 
+    setIsLoading(true);
     try {
       if (isInWishlist) {
+
         // Remove from wishlist
         await axios.delete(`http://localhost:3000/api/wishlist/${product._id}`, {
           withCredentials: true
@@ -96,11 +100,13 @@ const CarCard = memo(({ product }) => {
       }
     } catch (error) {
       console.error('Error toggling wishlist:', error);
+
     }
   };
 
   // Memoize image URL calculation
   const imageUrl = React.useMemo(() => {
+
     if (!product.images || product.images.length === 0) {
       return "https://via.placeholder.com/400x300?text=No+Image+Available";
     }
@@ -109,6 +115,7 @@ const CarCard = memo(({ product }) => {
     const firstImage = product.images[0];
     return firstImage?.url || firstImage || "https://via.placeholder.com/400x300?text=No+Image+Available";
   }, [product.images]);
+
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
@@ -130,6 +137,7 @@ const CarCard = memo(({ product }) => {
         <button 
           onClick={toggleWishlist}
           disabled={isLoading}
+
           className={`absolute top-2 left-2 p-1.5 rounded-full ${
             isInWishlist ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600'
           } hover:bg-red-500 hover:text-white transition-colors duration-300 ${
@@ -138,6 +146,7 @@ const CarCard = memo(({ product }) => {
           aria-label={isInWishlist ? "Remove from wishlists" : "Add to wishlists"}
         >
           <Heart className={`h-3.5 w-3.5 ${isInWishlist ? 'fill-current' : ''}`} />
+
         </button>
       </div>
       

@@ -1,6 +1,7 @@
 const Product = require('../../model/productsModel');
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
+const mongoose = require('mongoose');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -8,6 +9,7 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
 
 const createProduct = async (req, res) => {
     try {
@@ -83,82 +85,112 @@ const createProduct = async (req, res) => {
             details: error.stack 
         });
     }
-};
 
-const getAllProducts = async (req, res) => {
-    try {
-        const { featured, limit, sort, order } = req.query;
-        let query = {};
+    static async getAllProducts(req, res) {
+        try {
+            const { 
+                minPrice, 
+                maxPrice, 
+                minYear, 
+                maxYear, 
+                make, 
+                model, 
+                features, 
+                sort, 
+                order, 
+                limit 
+            } = req.query;
 
-        // If featured is true, only return featured cars
-        if (featured === 'true') {
-            query.isFeatured = true;
+            // Build query object
+            let query = {};
+            
+            // Price range filter
+            if (minPrice || maxPrice) {
+                query.price = {};
+                if (minPrice) query.price.$gte = parseFloat(minPrice);
+                if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+            }
+
+            // Year range filter
+            if (minYear || maxYear) {
+                query.year = {};
+                if (minYear) query.year.$gte = parseInt(minYear);
+                if (maxYear) query.year.$lte = parseInt(maxYear);
+            }
+
+            // Make and model filters
+            if (make) query.make = make;
+            if (model) query.model = model;
+
+            // Features filter
+            if (features) {
+                const featureList = features.split(',');
+                query.features = { $all: featureList };
+            }
+
+            // Build sort object
+            let sortOptions = {};
+            if (sort) {
+                sortOptions[sort] = order === 'desc' ? -1 : 1;
+            } else {
+                // Default sort by creation date if no sort specified
+                sortOptions.createdAt = -1;
+            }
+
+            // Execute query with options
+            const products = await Product.find(query)
+                .sort(sortOptions)
+                .limit(parseInt(limit) || 0);
+
+            res.status(200).json({
+                message: 'Fetched all products successfully!',
+                products
+            });
+        } catch (error) {
+            res.status(500).json({ message: 'Error fetching products', error: error.message });
         }
-
-        // Build sort object
-        let sortOptions = {};
-        if (sort) {
-            sortOptions[sort] = order === 'desc' ? -1 : 1;
-        } else {
-            // Default sort by creation date if no sort specified
-            sortOptions.createdAt = -1;
-        }
-
-        // Execute query with options
-        const products = await Product.find(query)
-            .sort(sortOptions)
-            .limit(parseInt(limit) || 0);
-
-        res.json(products);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching products', error: error.message });
     }
-};
 
-const getProductById = async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id);
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
+    static async getProductById(req, res) {
+        try {
+            const product = await Product.findById(req.params.id);
+            if (!product) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
+            res.json(product);
+        } catch (error) {
+            res.status(500).json({ message: 'Error fetching product', error: error.message });
         }
-        res.json(product);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching product', error: error.message });
     }
-};
 
-const updateProduct = async (req, res) => {
-    try {
-        const updatedProduct = await Product.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        );
-        if (!updatedProduct) {
-            return res.status(404).json({ message: 'Product not found' });
+    static async updateProduct(req, res) {
+        try {
+            const updatedProduct = await Product.findByIdAndUpdate(
+                req.params.id,
+                req.body,
+                { new: true }
+            );
+            if (!updatedProduct) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
+            res.json(updatedProduct);
+        } catch (error) {
+            res.status(500).json({ message: 'Error updating product', error: error.message });
         }
-        res.json(updatedProduct);
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating product', error: error.message });
     }
-};
 
-const deleteProduct = async (req, res) => {
-    try {
-        const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-        if (!deletedProduct) {
-            return res.status(404).json({ message: 'Product not found' });
+    static async deleteProduct(req, res) {
+        try {
+            const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+            if (!deletedProduct) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
+            res.json({ message: 'Product deleted successfully' });
+        } catch (error) {
+            res.status(500).json({ message: 'Error deleting product', error: error.message });
         }
-        res.json({ message: 'Product deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting product', error: error.message });
     }
-};
+}
 
-module.exports = {
-    createProduct,
-    getAllProducts,
-    getProductById,
-    updateProduct,
-    deleteProduct
-};
+module.exports = ProductController;
+
