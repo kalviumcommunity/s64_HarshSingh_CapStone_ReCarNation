@@ -13,10 +13,11 @@ const OrdersPage = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/orders`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+
+        setLoading(true);
+        const response = await axios.get('http://localhost:3000/api/orders', {
+          withCredentials: true
+
         });
         setOrders(response.data);
         setLoading(false);

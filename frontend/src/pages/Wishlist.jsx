@@ -26,17 +26,28 @@ const Wishlist = () => {
       }
     };
 
-    if (token) {
-      fetchWishlist();
+
+  const fetchWishlist = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/wishlist', {
+        withCredentials: true
+      });
+      setWishlist(response.data);
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+      toast.error('Failed to load wishlist');
+    } finally {
+      setLoading(false);
+
     }
   }, [token]);
 
   const removeFromWishlist = async (carId) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/wishlist/${carId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+
+      await axios.delete(`http://localhost:3000/api/wishlist/${productId}`, {
+        withCredentials: true
+
       });
       setWishlist(wishlist.filter((item) => item._id !== carId));
     } catch (err) {

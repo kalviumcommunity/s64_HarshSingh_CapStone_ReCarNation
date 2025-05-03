@@ -203,67 +203,82 @@ const SellCarPage = () => {
       return;
     }
 
+    if (!user) {
+        toast.error('Please log in to create a listing');
+        return;
+    }
+
     try {
-      setIsSubmitting(true);
-      setError(null);
-      
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'images') {
-          formData.images.forEach(file => {
-            formDataToSend.append('images', file);
-          });
-        } else {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
 
-      const response = await axios.post(`${API_BASE_URL}/products`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(percentCompleted);
-        }
-      });
-
-      if (response.data) {
-        toast.success('Car listing created successfully!');
-        // Reset form
-        setFormData({
-          make: '',
-          model: '',
-          year: '',
-          trim: '',
-          mileage: '',
-          price: '',
-          transmission: '',
-          fuelType: '',
-          description: '',
-          location: '',
-          contactNumber: '',
-          images: []
+        const formDataToSend = new FormData();
+        
+        // Append all form fields
+        Object.keys(formData).forEach(key => {
+            if (key !== 'images') {
+                formDataToSend.append(key, formData[key]);
+            }
         });
-        setActiveStep(1);
-        setUploadProgress(0);
-        // Redirect to the newly created listing
-        navigate(`/car/${response.data._id}`);
-      }
+
+        // Append images
+        formData.images.forEach((img, index) => {
+            formDataToSend.append('images', img.file);
+        });
+
+        // Add user ID
+        formDataToSend.append('userId', user._id);
+
+        // Log the FormData contents for debugging
+        for (let pair of formDataToSend.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+
+        }
+
+        const response = await axios.post('http://localhost:3000/api/products/', formDataToSend, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            withCredentials: true,
+            onUploadProgress: (progressEvent) => {
+                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                setUploadProgress(percentCompleted);
+            }
+        });
+
+        if (response.data) {
+            toast.success('Car listing created successfully!');
+            // Reset form
+            setFormData({
+                make: '',
+                model: '',
+                year: '',
+                trim: '',
+                mileage: '',
+                price: '',
+                transmission: '',
+                fuelType: '',
+                description: '',
+                location: '',
+                contactNumber: '',
+                images: []
+            });
+            setActiveStep(1);
+            setUploadProgress(0);
+            // Redirect to home page
+            navigate('/');
+        }
     } catch (err) {
-      console.error('Error creating listing:', err);
-      if (err.response?.status === 401) {
-        toast.error('Your session has expired. Please login again.');
-        dispatch(logout());
-        navigate('/login');
-      } else {
+
+        console.error('Error creating listing:', err);
         const errorMessage = err.response?.data?.message || 'Failed to create listing. Please try again.';
+        // Log more detailed error information
+        if (err.response?.data?.details) {
+            console.error('Server error details:', err.response.data.details);
+        }
         setError(errorMessage);
         toast.error(errorMessage);
-      }
+
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   };
 

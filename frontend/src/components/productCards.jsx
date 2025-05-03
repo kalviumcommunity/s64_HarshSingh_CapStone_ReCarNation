@@ -42,9 +42,37 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 // Memoized car card component for better performance
 const CarCard = memo(({ product }) => {
-  const { user, token } = useSelector((state) => state.auth);
+
+  const { user } = useAuth();
   const [isInWishlist, setIsInWishlist] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get('http://localhost:3000/api/wishlist', {
+          withCredentials: true
+        });
+        // Check if the current product is in the wishlist
+        const isProductInWishlist = response.data.some(item => 
+          item.productId._id === product._id
+        );
+        setIsInWishlist(isProductInWishlist);
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [product._id, user]);
+
 
   const toggleWishlist = async () => {
     if (!user) {
@@ -55,36 +83,39 @@ const CarCard = memo(({ product }) => {
     setIsLoading(true);
     try {
       if (isInWishlist) {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/wishlist/${product._id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+
+        // Remove from wishlist
+        await axios.delete(`http://localhost:3000/api/wishlist/${product._id}`, {
+          withCredentials: true
         });
+        setIsInWishlist(false);
       } else {
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/wishlist`,
-          { carId: product._id },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        // Add to wishlist
+        await axios.post('http://localhost:3000/api/wishlist', {
+          productId: product._id
+        }, {
+          withCredentials: true
+        });
+        setIsInWishlist(true);
       }
-      setIsInWishlist(!isInWishlist);
     } catch (error) {
-      console.error("Error toggling wishlist:", error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error toggling wishlist:', error);
+
     }
   };
 
   // Memoize image URL calculation
   const imageUrl = React.useMemo(() => {
-    return product.image 
-      ? `${API_BASE_URL}/uploads/${product.image}` 
-      : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='16' fill='%23666'%3ENo Image Available%3C/text%3E%3C/svg%3E";
-  }, [product.image]);
+
+    if (!product.images || product.images.length === 0) {
+      return "https://via.placeholder.com/400x300?text=No+Image+Available";
+    }
+    
+    // Handle both Cloudinary and local image formats
+    const firstImage = product.images[0];
+    return firstImage?.url || firstImage || "https://via.placeholder.com/400x300?text=No+Image+Available";
+  }, [product.images]);
+
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
@@ -94,6 +125,9 @@ const CarCard = memo(({ product }) => {
           alt={`${product.company} ${product.model}`}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
           loading="lazy"
+          onError={(e) => {
+            e.target.src = "https://via.placeholder.com/400x300?text=No+Image+Available";
+          }}
         />
         {product.isFeatured && (
           <Badge className="absolute top-2 right-2 bg-orange-600 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full">
@@ -103,15 +137,16 @@ const CarCard = memo(({ product }) => {
         <button 
           onClick={toggleWishlist}
           disabled={isLoading}
-          className={`absolute top-2 right-2 p-2 rounded-full ${
-            isInWishlist ? 'bg-red-500' : 'bg-white'
-          } shadow-md hover:bg-red-50 transition-colors`}
+
+          className={`absolute top-2 left-2 p-1.5 rounded-full ${
+            isInWishlist ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600'
+          } hover:bg-red-500 hover:text-white transition-colors duration-300 ${
+            isLoading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          aria-label={isInWishlist ? "Remove from wishlists" : "Add to wishlists"}
         >
-          <Heart
-            className={`h-5 w-5 ${
-              isInWishlist ? 'text-white' : 'text-red-500'
-            }`}
-          />
+          <Heart className={`h-3.5 w-3.5 ${isInWishlist ? 'fill-current' : ''}`} />
+
         </button>
       </div>
       

@@ -10,78 +10,80 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-class ProductController {
-    static async createProduct(req, res) {
-        try {
-            console.log('Request body:', req.body);
-            console.log('Request files:', req.files);
 
-            const {
-                make,
-                model,
-                year,
-                trim,
-                mileage,
-                price,
-                transmission,
-                fuelType,
-                description,
-                location,
-                contactNumber,
-                userId
-            } = req.body;
+const createProduct = async (req, res) => {
+    try {
+        console.log('Request body:', req.body);
+        console.log('Request files:', req.files);
 
-            // Validate required fields
-            if (!make || !model || !year || !mileage || !price || !location || !contactNumber) {
-                return res.status(400).json({ message: 'All required fields must be filled' });
-            }
-
-            // Upload images to Cloudinary if present
-            let imageUrls = [];
-            if (req.files && req.files.length > 0) {
-                imageUrls = await Promise.all(
-                    req.files.map(async (file) => {
-                        try {
-                            const result = await cloudinary.uploader.upload(file.path, {
-                                folder: 'car_listings'
-                            });
-                            return result.secure_url;
-                        } catch (uploadError) {
-                            console.error('Error uploading image:', uploadError);
-                            throw new Error('Failed to upload images');
-                        }
-                    })
-                );
-            }
-            
-            // Create new product
-            const newProduct = new Product({
-                make,
-                model,
-                year: parseInt(year),
-                trim,
-                mileage: parseInt(mileage),
-                price: parseFloat(price),
-                transmission,
-                fuelType,
-                description,
-                location,
-                contactNumber,
-                images: imageUrls,
-                listedBy: new mongoose.Types.ObjectId(userId)
-            });
-
-            const savedProduct = await newProduct.save();
-            console.log('Product created successfully:', savedProduct);
-            res.status(201).json(savedProduct);
-        } catch (error) {
-            console.error('Error creating product:', error);
-            res.status(500).json({ 
-                message: 'Error creating product', 
-                error: error.message,
-                details: error.stack 
-            });
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: 'At least one image is required' });
         }
+
+        const {
+            make,
+            model,
+            year,
+            trim,
+            mileage,
+            price,
+            transmission,
+            fuelType,
+            description,
+            location,
+            contactNumber
+        } = req.body;
+
+        // Validate required fields
+        if (!make || !model || !year || !mileage || !price || !location || !contactNumber) {
+            return res.status(400).json({ message: 'All required fields must be filled' });
+        }
+
+        const images = await Promise.all(
+            req.files.map(async (file) => {
+              try {
+                const result = await cloudinary.uploader.upload(file.path, {
+                  folder: 'car_listings'
+                });
+                return {
+                  url: result.secure_url,
+                  publicId: result.public_id
+                };
+              } catch (uploadError) {
+                console.error('Error uploading image:', uploadError);
+                throw new Error('Failed to upload images');
+              }
+            })
+          );
+          
+
+        // Create new product with proper image format and listedBy field
+        const newProduct = new Product({
+            make,
+            model,
+            year: parseInt(year),
+            trim,
+            mileage: parseInt(mileage),
+            price: parseFloat(price),
+            transmission,
+            fuelType,
+            description,
+            location,
+            contactNumber,
+            images: images,
+            listedBy: req.user._id // Get from authenticated user
+        });
+
+        const savedProduct = await newProduct.save();
+        console.log('Product created successfully:', savedProduct);
+        res.status(201).json(savedProduct);
+    } catch (error) {
+        console.error('Error creating product:', error);
+        res.status(500).json({ 
+            message: 'Error creating product', 
+            error: error.message,
+            details: error.stack 
+        });
     }
 
     static async getAllProducts(req, res) {
