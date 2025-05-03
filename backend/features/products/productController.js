@@ -1,110 +1,168 @@
-const Product = require('../../model/productsModel')
+const Product = require('../../model/productsModel');
+const cloudinary = require('cloudinary').v2;
+const path = require('path');
+const mongoose = require('mongoose');
 
-class ProductController{
-    static async createProduct(req, res){
-        try{
-            const {name, company, model, year, description, KilometersTraveled} = req.body;
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
-            if(!name || !company || !model || !year){
-               return res.status(400).json({message: "All fields are required."})
-            }
-
-            const product = new Product({
-                 name,
-                 company,
-                 model,
-                 year,
-                 description,
-                 KilometersTraveled,
-                 listedBy: req.user._id,
-                 image: imagePath 
-                });
-            
-            const savedProduct = await product.save();
-            res.status(201).json(savedProduct);
-        }
-        catch(error){
-            res.status(400).json({error : error.message});
-        }
-    }
-    static async getAllProducts(req, res){
-        try{
-            const products = await Product.find();
-            res.status(200).json({
-                message : 'Fetched all products successfully!',
-                products
-            });
-        }
-        catch(error){
-            res.status(500).json({error: error.message});
-        }
-    }
-
-    static async getProductById(req, res){
-        try{
-            const {id} = req.params;
-            const products = await Product.findById(id);
-
-            if (!product) {
-                return res.status(404).json({ message: 'Product not found!' });
-            };
-
-            res.status(200).json({
-                message : 'Requested Product fetched Successfully',
-                products
-            });
-        }
-        catch(error){
-            res.status(500).json({error: error.message});
-        }
-    }
-
-    static async updateProduct(req, res){
-        try{
-           const {id} = req.params;
-           const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
-            new : true,
-            runValidators: true
-           });
-
-           if(!updatedProduct) {
-            res.status(400).json({message: 'Product not found!'})
-           }
-           res.status(200).json({
-            message: 'Updated product!',
-            product: updatedProduct
-        });        
-        }
-        catch(error){
-            res.status(500).json({
-                message : "Error while updating the product",
-                error : error.message
-            });
-        }
-    }
-
-
-static async deleteProduct(req, res) {
+const createProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        console.log('Request body:', req.body);
+        console.log('Request files:', req.files);
 
-        const deletedProduct = await Product.findByIdAndDelete(id);
+        const {
+            make,
+            model,
+            year,
+            trim,
+            mileage,
+            price,
+            transmission,
+            fuelType,
+            description,
+            location,
+            contactNumber,
+            userId
+        } = req.body;
 
-        if (!deletedProduct) {
-            return res.status(404).json({ message: 'Product not found!' });
+        // Validate required fields
+        if (!make || !model || !year || !mileage || !price || !location || !contactNumber) {
+            return res.status(400).json({ message: 'All required fields must be filled' });
         }
 
-        res.status(200).json({
-            message: 'Product deleted successfully!',
-            product: deletedProduct
+        // Upload images to Cloudinary if present
+        let imageUrls = [];
+        if (req.files && req.files.length > 0) {
+            imageUrls = await Promise.all(
+                req.files.map(async (file) => {
+                    try {
+                        const result = await cloudinary.uploader.upload(file.path, {
+                            folder: 'car_listings'
+                        });
+                        return result.secure_url;
+                    } catch (uploadError) {
+                        console.error('Error uploading image:', uploadError);
+                        throw new Error('Failed to upload images');
+                    }
+                })
+            );
+        }
+
+        // if (!mongoose.Types.ObjectId.isValid(userId)) {
+        //     return res.status(400).json({ message: 'Invalid userId' });
+        // }
+
+        // Create new product
+        const newProduct = new Product({
+            make,
+            model,
+            year: parseInt(year),
+            trim,
+            mileage: parseInt(mileage),
+            price: parseFloat(price),
+            transmission,
+            fuelType,
+            description,
+            location,
+            contactNumber,
+            images: imageUrls,
+            listedBy: new mongoose.Types.ObjectId(userId)
         });
+
+        const savedProduct = await newProduct.save();
+        console.log('Product created successfully:', savedProduct);
+        res.status(201).json(savedProduct);
     } catch (error) {
-        res.status(500).json({
-            message: "Error while deleting the product",
-            error: error.message
+        console.error('Error creating product:', error);
+        res.status(500).json({ 
+            message: 'Error creating product', 
+            error: error.message,
+            details: error.stack 
         });
     }
-}
-}
+};
 
-module.exports = ProductController;
+const getAllProducts = async (req, res) => {
+    try {
+        const { featured, limit, sort, order } = req.query;
+        let query = {};
+
+        // If featured is true, only return featured cars
+        if (featured === 'true') {
+            query.isFeatured = true;
+        }
+
+        // Build sort object
+        let sortOptions = {};
+        if (sort) {
+            sortOptions[sort] = order === 'desc' ? -1 : 1;
+        } else {
+            // Default sort by creation date if no sort specified
+            sortOptions.createdAt = -1;
+        }
+
+        // Execute query with options
+        const products = await Product.find(query)
+            .sort(sortOptions)
+            .limit(parseInt(limit) || 0);
+
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching products', error: error.message });
+    }
+};
+
+const getProductById = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching product', error: error.message });
+    }
+};
+
+const updateProduct = async (req, res) => {
+    try {
+        const updatedProduct = await Product.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+        if (!updatedProduct) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        res.json(updatedProduct);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating product', error: error.message });
+    }
+
+};
+
+const deleteProduct = async (req, res) => {
+    try {
+        const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+        if (!deletedProduct) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        res.json({ message: 'Product deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting product', error: error.message });
+    }
+};
+
+module.exports = {
+    createProduct,
+    getAllProducts,
+    getProductById,
+    updateProduct,
+    deleteProduct
+};
+
