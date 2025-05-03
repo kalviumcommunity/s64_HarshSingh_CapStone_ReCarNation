@@ -52,11 +52,7 @@ const createProduct = async (req, res) => {
                 })
             );
         }
-
-        // if (!mongoose.Types.ObjectId.isValid(userId)) {
-        //     return res.status(400).json({ message: 'Invalid userId' });
-        // }
-
+        
         // Create new product
         const newProduct = new Product({
             make,
