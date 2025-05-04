@@ -155,10 +155,41 @@ const deleteProduct = async (req, res) => {
     }
 };
 
+const getUserProducts = async (req, res) => {
+    try {
+        const products = await Product.find({ listedBy: req.user._id })
+            .sort({ createdAt: -1 });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ 
+            message: 'Error fetching user products', 
+            error: error.message 
+        });
+    }
+};
+
+const getAllProductsAdmin = async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+        const products = await Product.find()
+            .sort({ createdAt: -1 });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ 
+            message: 'Error fetching all products', 
+            error: error.message 
+        });
+    }
+};
+
 module.exports = {
     createProduct,
     getAllProducts,
     getProductById,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    getUserProducts,
+    getAllProductsAdmin
 };

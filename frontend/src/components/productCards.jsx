@@ -46,6 +46,11 @@ const CarCard = memo(({ product }) => {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const canEditDelete = user && (
+    user.role === 'admin' || 
+    (user.role === 'seller' && product.listedBy === user._id)
+  );
+
   useEffect(() => {
     const checkWishlistStatus = async () => {
       if (!user) {
@@ -109,6 +114,17 @@ const CarCard = memo(({ product }) => {
     const firstImage = product.images[0];
     return firstImage?.url || firstImage || "https://via.placeholder.com/400x300?text=No+Image+Available";
   }, [product.images]);
+
+  const handleDelete = async (productId) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/products/${productId}`, {
+        withCredentials: true
+      });
+      // Optionally, you can refresh the product list or show a success message
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
@@ -190,6 +206,29 @@ const CarCard = memo(({ product }) => {
             </Link>
           </Button>
         </div>
+
+        {canEditDelete && (
+          <div className="flex gap-2 mt-2 border-t pt-2">
+            <Link 
+              to={`/edit-car/${product._id}`}
+              className="flex-1"
+            >
+              <Button 
+                variant="outline"
+                className="w-full text-xs h-7 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+              >
+                Edit
+              </Button>
+            </Link>
+            <Button 
+              variant="outline"
+              className="flex-1 text-xs h-7 border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+              onClick={() => handleDelete(product._id)}
+            >
+              Delete
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

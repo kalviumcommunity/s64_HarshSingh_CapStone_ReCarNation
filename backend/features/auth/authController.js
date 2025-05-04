@@ -235,3 +235,40 @@ exports.getCurrentUser = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+// Update User Role
+exports.updateRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    
+    if (!['buyer', 'seller', 'admin'].includes(role)) {
+      return res.status(400).json({ message: "Invalid role specified" });
+    }
+
+    const userId = req.user._id;
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { role },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Role updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating role",
+      error: error.message
+    });
+  }
+};

@@ -4,21 +4,15 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Package, 
-  Heart, 
-  Clock, 
-  Car, 
-  Warehouse, 
-  Settings, 
-  User,
-  ChevronRight,
-  Mail,
-  Phone,
-  LogOut
+  Package, Heart, Clock, Car, Warehouse, 
+  Settings, User, ChevronRight, Mail, 
+  Phone, LogOut
 } from "lucide-react";
+import { useAuth } from '@/context/AuthContext';
 
 function UserProfilePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [userData, setUserData] = useState({
     name: "",
     email: "",
@@ -32,67 +26,27 @@ function UserProfilePage() {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        setIsLoading(true);
-        // Check if there's a token in localStorage as a fallback
-        const userToken = localStorage.getItem('user');
+        const response = await fetch('http://localhost:3000/api/auth/profile', {
+          credentials: 'include'
+        });
         
-        if (userToken) {
-          try {
-            // Try to use cached user data if available
-            const userData = JSON.parse(userToken);
-            setUserData(userData);
-            setIsLoading(false);
-            console.log("Using cached user data:", userData);
-            return; // Skip API call if we have local data
-          } catch (err) {
-            console.log("Error parsing cached user data, proceeding with API call");
-          }
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
         }
         
-        try {
-          const response = await fetch('http://localhost:3000/api/auth/profile', {
-            method: 'GET',
-            credentials: 'include', // Necessary for cookies to be sent
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (!response.ok) {
-            if (response.status === 404) {
-              console.log("API endpoint not found, redirecting to login");
-              navigate('/login');
-              return;
-            }
-            throw new Error('Not authenticated');
-          }
-          
-          const data = await response.json();
-          const profileData = data.userProfile || data.user; // Try both formats
-          setUserData(profileData);
-        } catch (apiErr) {
-          console.log("API call failed, falling back to default data");
-          // Use default data for testing purposes
-          setUserData({
-            name: "Test User",
-            email: "test@example.com",
-            role: "user"
-          });
-        }
-        setIsLoading(false);
+        const data = await response.json();
+        setUserData(data.user);
       } catch (err) {
-        console.error("Failed to fetch user profile:", err);
         setError(err.message);
+      } finally {
         setIsLoading(false);
-        // Redirect to login if not authenticated
-        navigate('/login');
       }
     };
     
     fetchUserProfile();
-  }, [navigate]);
-  
-  // Menu items
+  }, []);
+
+  // Menu items - dynamic based on role
   const menuItems = [
     { 
       title: "My Orders", 
@@ -100,79 +54,73 @@ function UserProfilePage() {
       path: "/orders"
     },
     { 
-      title: "Shortlisted Vehicles", 
+      title: "Wishlist", 
       icon: <Heart className="h-5 w-5 text-gray-500" />, 
-      path: "/shortlisted"
+      path: "/wishlist"
     },
     { 
-      title: "My Activity", 
+      title: "Recent Activity", 
       icon: <Clock className="h-5 w-5 text-gray-500" />, 
       path: "/activity"
     },
     { 
-      title: "My Vehicles", 
+      title: userData.role === 'seller' ? "Listed Vehicles" : "My Vehicles", 
       icon: <Car className="h-5 w-5 text-gray-500" />, 
-      path: "/my-vehicles"
+      path: "/listed-cars"
     },
+    ...(userData.role === 'seller' ? [
+      { 
+        title: "Sell a Car", 
+        icon: <Car className="h-5 w-5 text-gray-500" />, 
+        path: "/sellCar"
+      }
+    ] : []),
     { 
-      title: "My Garage", 
-      icon: <Warehouse className="h-5 w-5 text-gray-500" />, 
-      path: "/garage"
-    },
-    { 
-      title: "Manage Consents", 
+      title: "Manage Role", 
       icon: <Settings className="h-5 w-5 text-gray-500" />, 
-      path: "/consents"
+      path: "/consent"
     },
     { 
       title: "Profile Settings", 
       icon: <User className="h-5 w-5 text-gray-500" />, 
-      path: "/profile/settings"
+      path: "/profile-settings"
     }
   ];
 
-  function handleNavigation(path) {
+  const handleNavigation = (path) => {
     navigate(path);
-  }
+  };
 
-  function handleLogout() {
-    // Clear localStorage data first to ensure logout works even if backend fails
-    localStorage.removeItem('user');
-    
-    // Try to logout on backend, but don't depend on it succeeding
-    fetch('http://localhost:3000/api/auth/logout', {
-      method: 'GET',
-      credentials: 'include',
-    })
-      .then(response => {
-        // Don't require json response, just redirect
-        navigate('/login');
-      })
-      .catch(err => {
-        console.error("Backend logout failed:", err);
-        // Still redirect to login even if API call fails
-        navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await fetch('http://localhost:3000/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
       });
-  }
+      localStorage.removeItem('user');
+      navigate('/login');
+    } catch (err) {
+      console.error("Logout failed:", err);
+      navigate('/login');
+    }
+  };
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <main className="flex-grow py-8 flex items-center justify-center">
-          <p>Loading profile...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
         </main>
       </div>
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <main className="flex-grow py-8 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-500 mb-4">Error loading profile: {error}</p>
+            <p className="text-red-500 mb-4">{error}</p>
             <Button onClick={() => navigate('/login')}>Go to Login</Button>
           </div>
         </main>
@@ -180,14 +128,12 @@ function UserProfilePage() {
     );
   }
 
-  // Get user initial for avatar
   const userInitial = userData.name ? userData.name.charAt(0).toUpperCase() : "?";
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <main className="flex-grow py-8">
         <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Profile Card */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
             <div className="flex flex-col items-center text-center">
               {userData.profilePicture ? (
@@ -197,7 +143,7 @@ function UserProfilePage() {
                   className="h-24 w-24 rounded-full object-cover mb-4"
                 />
               ) : (
-                <Avatar className="h-24 w-24 bg-brand-blue text-white text-2xl font-semibold mb-4">
+                <Avatar className="h-24 w-24 bg-blue-600 text-white text-2xl font-semibold mb-4">
                   <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
               )}
@@ -208,23 +154,13 @@ function UserProfilePage() {
                 <span>{userData.email}</span>
               </div>
               
-              {userData.role && (
-                <div className="mt-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  {userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
-                </div>
-              )}
-              
-              {!userData.googleId && (
-                <button className="mt-3 flex items-center text-brand-blue hover:text-brand-lightBlue transition-colors duration-200">
-                  <Mail className="h-4 w-4 mr-1" />
-                  <span className="text-sm">Connect Email or Social Account</span>
-                </button>
-              )}
+              <div className="mt-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                {userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
+              </div>
             </div>
           </div>
 
-          {/* Menu Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <ul>
               {menuItems.map((item, index) => (
                 <li key={index}>
@@ -244,8 +180,7 @@ function UserProfilePage() {
             </ul>
           </div>
 
-          {/* Logout Button */}
-          <div className="text-center">
+          <div className="text-center mt-6">
             <Button 
               onClick={handleLogout}
               variant="outline" 
