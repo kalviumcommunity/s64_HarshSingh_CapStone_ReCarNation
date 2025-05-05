@@ -129,17 +129,53 @@ const getProductById = async (req, res) => {
 
 const updateProduct = async (req, res) => {
     try {
+        const {
+            make,
+            model,
+            year,
+            trim,
+            mileage,
+            price,
+            transmission,
+            fuelType,
+            description,
+            location,
+            contactNumber
+        } = req.body;
+
+        // Convert numeric fields
+        const updates = {
+            ...req.body,
+            year: year ? parseInt(year) : undefined,
+            mileage: mileage ? parseInt(mileage) : undefined,
+            price: price ? parseFloat(price) : undefined
+        };
+
+        // Remove undefined values
+        Object.keys(updates).forEach(key => 
+            updates[key] === undefined && delete updates[key]
+        );
+
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
-            req.body,
-            { new: true }
+            updates,
+            { 
+                new: true,
+                runValidators: true // This ensures enum validations are run
+            }
         );
+
         if (!updatedProduct) {
             return res.status(404).json({ message: 'Product not found' });
         }
         res.json(updatedProduct);
     } catch (error) {
-        res.status(500).json({ message: 'Error updating product', error: error.message });
+        console.error('Error updating product:', error);
+        res.status(500).json({ 
+            message: 'Error updating product', 
+            error: error.message,
+            details: error.stack
+        });
     }
 };
 
@@ -184,6 +220,90 @@ const getAllProductsAdmin = async (req, res) => {
     }
 };
 
+// Add new images to an existing product
+const addImages = async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: 'No images provided' });
+        }
+
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Upload new images to Cloudinary
+        const newImages = await Promise.all(
+            req.files.map(async (file) => {
+                try {
+                    const result = await cloudinary.uploader.upload(file.path, {
+                        folder: 'car_listings'
+                    });
+                    return {
+                        url: result.secure_url,
+                        publicId: result.public_id
+                    };
+                } catch (uploadError) {
+                    console.error('Error uploading image:', uploadError);
+                    throw new Error('Failed to upload images');
+                }
+            })
+        );
+
+        // Add new images to the product
+        product.images = [...product.images, ...newImages];
+        const updatedProduct = await product.save();
+        res.json(updatedProduct);
+    } catch (error) {
+        console.error('Error adding images:', error);
+        res.status(500).json({ 
+            message: 'Error adding images', 
+            error: error.message,
+            details: error.stack 
+        });
+    }
+};
+
+// Remove an image from a product
+const removeImage = async (req, res) => {
+    try {
+        const { id, imageId } = req.params;
+        
+        const product = await Product.findById(id);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Find the image to remove
+        const imageToRemove = product.images.find(img => img._id.toString() === imageId);
+        if (!imageToRemove) {
+            return res.status(404).json({ message: 'Image not found' });
+        }
+
+        // Delete from Cloudinary
+        if (imageToRemove.publicId) {
+            try {
+                await cloudinary.uploader.destroy(imageToRemove.publicId);
+            } catch (cloudinaryError) {
+                console.error('Error deleting from Cloudinary:', cloudinaryError);
+            }
+        }
+
+        // Remove image from product
+        product.images = product.images.filter(img => img._id.toString() !== imageId);
+        const updatedProduct = await product.save();
+        res.json(updatedProduct);
+    } catch (error) {
+        console.error('Error removing image:', error);
+        res.status(500).json({ 
+            message: 'Error removing image', 
+            error: error.message,
+            details: error.stack 
+        });
+    }
+};
+
+// Add new exports
 module.exports = {
     createProduct,
     getAllProducts,
@@ -191,5 +311,7 @@ module.exports = {
     updateProduct,
     deleteProduct,
     getUserProducts,
-    getAllProductsAdmin
+    getAllProductsAdmin,
+    addImages,
+    removeImage
 };
