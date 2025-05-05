@@ -54,16 +54,16 @@ const Footer = memo(() => {
   const quickLinks = [
     { to: "/browse", text: "Browse Cars" },
     { to: "/sellCar", text: "Sell a Car" },
-    { to: "/about", text: "About Us" },
-    { to: "/contact", text: "Contact" }
+    { to: "/about-us", text: "About Us" },
+    { to: "/contact-us", text: "Contact Us" }
   ];
 
   // Data for Support section
   const supportLinks = [
-    { to: "/help", text: "Help Center" },
+    { to: "/help-center", text: "Help Center" },
     { to: "/faq", text: "FAQ" },
-    { to: "/terms", text: "Terms of Service" },
-    { to: "/privacy", text: "Privacy Policy" }
+    { to: "/terms-&-service", text: "Terms of Service" },
+    { to: "/privacy-policy", text: "Privacy Policy" }
   ];
 
   // Data for Social Media links

@@ -18,11 +18,11 @@ const productSchema = new mongoose.Schema({
     },
     mileage: {
         type: Number,
-        required: true
+        // required: true
     },
     price: {
         type: Number,
-        required: true
+        // required: true
     },
     transmission: {
         type: String,

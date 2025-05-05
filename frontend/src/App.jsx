@@ -10,7 +10,7 @@ import Contact from '@/pages/static/Contact';
 import HelpCenter from '@/pages/static/HelpCenter';
 import TermsAndServices from '@/pages/static/TermsAndServices';
 import PrivacyPolicy from '@/pages/static/PrivacyPolicy';
-import MessagingPage from './pages/messegingPage';
+import MessagingPage from '@/pages/messagingPage';
 import OrdersPage from './pages/orders';
 import Layout from "@/components/Layout";
 import Wishlist from '@/pages/Wishlist';
@@ -24,6 +24,7 @@ import ListedCars from '@/pages/profilePages/listedCars';
 
 function App() {
   return (
+
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -121,6 +122,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+
   );
 }
 

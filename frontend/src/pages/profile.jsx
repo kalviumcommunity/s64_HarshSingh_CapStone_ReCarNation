@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -42,7 +43,7 @@ function UserProfilePage() {
         setIsLoading(false);
       }
     };
-    
+
     fetchUserProfile();
   }, []);
 
@@ -190,6 +191,57 @@ function UserProfilePage() {
               Logout
             </Button>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <Button variant="outline" className="w-full justify-between" onClick={() => handleNavigation('/my-listings')}>
+              <div className="flex items-center">
+                <Car className="mr-2 h-4 w-4" />
+                My Listings
+              </div>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="w-full justify-between" onClick={() => handleNavigation('/favorites')}>
+              <div className="flex items-center">
+                <Heart className="mr-2 h-4 w-4" />
+                Favorites
+              </div>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="w-full justify-between" onClick={() => handleNavigation('/settings')}>
+              <div className="flex items-center">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </div>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-4 border rounded-lg">
+              <h2 className="text-lg font-semibold mb-4">Contact Information</h2>
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <Mail className="mr-2 h-4 w-4" />
+                  <span>{user.email}</span>
+                </div>
+                {user.phone && (
+                  <div className="flex items-center">
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>{user.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <Button variant="outline" className="w-full" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </main>
     </div>

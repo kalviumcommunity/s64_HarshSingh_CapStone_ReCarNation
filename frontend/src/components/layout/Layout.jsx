@@ -1,11 +1,10 @@
-import React from 'react';
-import Header from './header';
-import Footer from './footer';
+import Navbar from '../navbar';
+import Footer from '../footer';
 
 const Layout = ({ children }) => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
       <main className="flex-grow">
         {children}
       </main>

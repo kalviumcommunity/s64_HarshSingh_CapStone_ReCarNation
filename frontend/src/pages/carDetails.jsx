@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+
 import { useParams, useNavigate } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "../components/ui/badge";
+import { Textarea } from "../components/ui/textarea";
+import { Tabs as TabsRoot, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Calendar, Car, MapPin, Fuel, BarChart3, User, MessageSquare, Heart, Share2, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -181,7 +183,7 @@ const CarDetailsPage = () => {
               
               {/* Car Details Tabs */}
               <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-                <Tabs defaultValue="overview">
+                <TabsRoot defaultValue="overview">
                   <TabsList className="w-full border-b">
                     <TabsTrigger value="overview" className="flex-1">Overview</TabsTrigger>
                     <TabsTrigger value="features" className="flex-1">Features</TabsTrigger>
@@ -333,7 +335,7 @@ const CarDetailsPage = () => {
                       </div>
                     </div>
                   </TabsContent>
-                </Tabs>
+                </TabsRoot>
               </div>
             </div>
             

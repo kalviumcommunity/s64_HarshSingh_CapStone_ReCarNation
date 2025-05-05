@@ -178,6 +178,7 @@ const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
           alt={`${product.company} ${product.model}`}
           className={`w-full h-full object-cover hover:scale-105 transition-transform duration-500 ${imageError ? 'opacity-50' : ''}`}
           loading="lazy"
+
           onError={(e) => {
             if (retryCount.current < 3 && !imageError) {
               retryLoadImage();
