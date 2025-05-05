@@ -1,13 +1,15 @@
-import { useState, useCallback, useContext } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from 'react-redux';
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImagePlus, Check, AlertCircle, Car, Upload, X } from "lucide-react";
-import { AuthContext } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
+import { logout } from "../store/slices/authSlice";
+import { setError } from "../store/slices/errorSlice";
 
 // Form validation schema
 const REQUIRED_FIELDS = {
@@ -22,7 +24,8 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 const SellCarPage = () => {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  const dispatch = useDispatch();
+  const { user, token } = useSelector((state) => state.auth);
   const [activeStep, setActiveStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -43,6 +46,14 @@ const SellCarPage = () => {
     images: []
   });
   const [errors, setErrors] = useState({});
+
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!user || !token) {
+      toast.error('Please login to create a listing');
+      navigate('/login');
+    }
+  }, [user, token, navigate]);
 
   // Cleanup function for image previews
   const cleanup = useCallback(() => {
@@ -185,8 +196,12 @@ const SellCarPage = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+    
+    if (!token) {
+      dispatch(setError("Please login to sell a car"));
+      navigate('/login');
+      return;
+    }
 
     if (!user) {
         toast.error('Please log in to create a listing');
@@ -194,6 +209,7 @@ const SellCarPage = () => {
     }
 
     try {
+
         const formDataToSend = new FormData();
         
         // Append all form fields
@@ -214,6 +230,7 @@ const SellCarPage = () => {
         // Log the FormData contents for debugging
         for (let pair of formDataToSend.entries()) {
             console.log(pair[0] + ': ' + pair[1]);
+
         }
 
         const response = await axios.post('http://localhost:3000/api/products/', formDataToSend, {
@@ -250,6 +267,7 @@ const SellCarPage = () => {
             navigate('/');
         }
     } catch (err) {
+
         console.error('Error creating listing:', err);
         const errorMessage = err.response?.data?.message || 'Failed to create listing. Please try again.';
         // Log more detailed error information
@@ -258,6 +276,7 @@ const SellCarPage = () => {
         }
         setError(errorMessage);
         toast.error(errorMessage);
+
     } finally {
         setIsSubmitting(false);
     }

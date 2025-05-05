@@ -45,7 +45,7 @@ const HelpCenter = () => {
           <div className="bg-blue-50 p-6 rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Still Need Help?</h2>
             <p className="mb-4">If you can't find the answer to your question, our support team is here to help.</p>
-            <a href="/contact" className="text-blue-600 hover:text-blue-800">
+            <a href="/contact-us" className="text-blue-600 hover:text-blue-800">
               Contact Support →
             </a>
           </div>

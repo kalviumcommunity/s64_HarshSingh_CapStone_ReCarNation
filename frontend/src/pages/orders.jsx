@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Car, Calendar, MapPin, DollarSign, Package } from 'lucide-react';
 
 const OrdersPage = () => {
-  const { user } = useAuth();
+  const { user, token } = useSelector((state) => state.auth);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,24 +13,24 @@ const OrdersPage = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+
         setLoading(true);
         const response = await axios.get('http://localhost:3000/api/orders', {
           withCredentials: true
+
         });
-        setOrders(response.data.orders);
-        setError(null);
+        setOrders(response.data);
+        setLoading(false);
       } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError('Failed to load orders. Please try again later.');
-      } finally {
+        setError(err.response?.data?.message || "Failed to fetch orders");
         setLoading(false);
       }
     };
 
-    if (user?.token) {
+    if (token) {
       fetchOrders();
     }
-  }, [user?.token]);
+  }, [token]);
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
@@ -47,6 +47,10 @@ const OrdersPage = () => {
     }
   };
 
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!user) return <div>Please login to view your orders</div>;
+
   return (
     <div className="min-h-screen flex flex-col">
 
@@ -60,11 +64,7 @@ const OrdersPage = () => {
             </div>
           )}
 
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-            </div>
-          ) : orders.length === 0 ? (
+          {orders.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-gray-900 mb-2">No Orders Yet</h2>

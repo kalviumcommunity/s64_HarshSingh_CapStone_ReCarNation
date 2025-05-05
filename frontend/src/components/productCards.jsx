@@ -134,9 +134,6 @@ const CarCard = memo(({ product }) => {
           alt={`${product.company} ${product.model}`}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
           loading="lazy"
-          onError={(e) => {
-            e.target.src = "https://via.placeholder.com/400x300?text=No+Image+Available";
-          }}
         />
         {product.isFeatured && (
           <Badge className="absolute top-2 right-2 bg-orange-600 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full">

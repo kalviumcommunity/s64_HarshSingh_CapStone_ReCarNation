@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { Heart } from 'lucide-react';
@@ -66,13 +67,13 @@ const Wishlist = () => {
     }
   };
 
-  const removeFromWishlist = async (productId) => {
+  const removeFromWishlist = async (carId) => {
     try {
-      await axios.delete(`http://localhost:3000/api/wishlist/${productId}`, {
+      await axios.delete(`http://localhost:3000/api/wishlist/${carId}`, {
         withCredentials: true
       });
       
-      setWishlistItems(wishlistItems.filter(item => item._id !== productId));
+      setWishlistItems(wishlistItems.filter(item => item._id !== carId));
       toast.success('Removed from wishlist');
     } catch (error) {
       console.error('Error removing from wishlist:', error);
@@ -80,11 +81,23 @@ const Wishlist = () => {
     }
   };
 
-  if (loading) {
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!user) return <div>Please login to view your wishlist</div>;
+
+  if (error) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        <div className="max-w-7xl mx-auto py-8 px-4 flex-grow">
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4">{error}</p>
+            <button 
+              onClick={fetchWishlist}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
