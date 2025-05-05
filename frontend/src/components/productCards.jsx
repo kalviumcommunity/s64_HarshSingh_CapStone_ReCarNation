@@ -50,10 +50,14 @@ const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
   const [imageUrl, setImageUrl] = useState("");
   const [imageError, setImageError] = useState(false);
   const retryCount = useRef(0);
+  const MAX_RETRIES = 2;
   const location = useLocation();
 
-  // Initialize image URL
+  // Initialize image URL with better error handling
   useEffect(() => {
+    retryCount.current = 0;
+    setImageError(false);
+    
     if (!product.images || product.images.length === 0) {
       setImageUrl("https://via.placeholder.com/400x300?text=No+Image+Available");
       setImageError(true);
@@ -71,20 +75,31 @@ const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
     }
 
     setImageUrl(url);
-    setImageError(false);
-    retryCount.current = 0;
   }, [product.images]);
 
-  // Retry loading image if it fails
+  // Improved retry loading image function
   const retryLoadImage = useCallback(() => {
-    if (retryCount.current >= 3 || imageError) {
+    if (retryCount.current >= MAX_RETRIES || imageError) {
+      setImageUrl("https://via.placeholder.com/400x300?text=No+Image+Available");
+      setImageError(true);
       return;
     }
 
-    retryCount.current += 1;
+    const nextRetry = retryCount.current + 1;
+    console.log(`Retrying image load (attempt ${nextRetry}/${MAX_RETRIES})`);
+    retryCount.current = nextRetry;
+    
+    // Add cache-busting parameter and retry after a delay
+    const retryDelay = Math.min(2000 * Math.pow(2, retryCount.current - 1), 8000);
     setTimeout(() => {
-      setImageUrl(prev => prev + '?retry=' + retryCount.current);
-    }, 3000);
+      if (!imageError) {
+        setImageUrl(prev => {
+          const url = new URL(prev, window.location.origin);
+          url.searchParams.set('retry', nextRetry);
+          return url.toString();
+        });
+      }
+    }, retryDelay);
   }, [imageError]);
 
   const canEditDelete = currentUserIsOwner || (user && (
@@ -179,7 +194,7 @@ const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
           className={`w-full h-full object-cover hover:scale-105 transition-transform duration-500 ${imageError ? 'opacity-50' : ''}`}
           loading="lazy"
           onError={(e) => {
-            if (retryCount.current < 3 && !imageError) {
+            if (retryCount.current < MAX_RETRIES && !imageError) {
               retryLoadImage();
             } else {
               e.target.src = "https://via.placeholder.com/400x300?text=No+Image+Available";
