@@ -1,6 +1,5 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, AuthContext, useAuth } from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import Home from '@/pages/home';
 import Login from '@/pages/auth';
 import Profile from '@/pages/profile';
@@ -11,30 +10,17 @@ import Contact from '@/pages/static/Contact';
 import HelpCenter from '@/pages/static/HelpCenter';
 import TermsAndServices from '@/pages/static/TermsAndServices';
 import PrivacyPolicy from '@/pages/static/PrivacyPolicy';
-import MessagingPage from './pages/messegingPage';
+import MessagingPage from '@/pages/messagingPage';
 import OrdersPage from './pages/orders';
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { useContext } from "react";
+import Layout from "@/components/Layout";
 import Wishlist from '@/pages/Wishlist';
 import CarDetails from '@/pages/carDetails';
 import ProductCars from '@/pages/productCars';
-import ProfileSettings from '@/pages/profileSettings';
+import ProfileSettings from '@/pages/profilePages/profileSettings';
+import Consent from '@/pages/profilePages/concent';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import listedCars from '@/pages/profilePages/listedCars';
 
-
-function AppContent() {
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(checkAuth());
-  }, [dispatch]);
-
-  return (
-    <Router>
-      <AppRoutes />
-    </Router>
-  );
-}
 
 function App() {
   return (
@@ -42,6 +28,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/home" element={<Layout><Home /></Layout>} />
           <Route path="/login" element={<Login />} />
@@ -54,6 +41,8 @@ function App() {
           <Route path="/browse" element={<Layout><BrowseCar /></Layout>} />
           <Route path="/cars" element={<Layout><ProductCars /></Layout>} />
           <Route path="/car/:id" element={<Layout><CarDetails /></Layout>} />
+
+          {/* Protected Routes - Any authenticated user */}
           <Route
             path="/profile"
             element={
@@ -71,10 +60,10 @@ function App() {
             }
           />
           <Route
-            path="/sellCar"
+            path="/consent"
             element={
               <ProtectedRoute>
-                <Layout><SellCar /></Layout>
+                <Layout><Consent /></Layout>
               </ProtectedRoute>
             }
           />
@@ -87,6 +76,34 @@ function App() {
             }
           />
           <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <Layout><Wishlist /></Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected Routes - Seller/Admin Only */}
+          <Route
+            path="/sellCar"
+            element={
+              <ProtectedRoute allowedRoles={['seller', 'admin']}>
+                <Layout><SellCar /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/listed-cars"
+            element={
+              <ProtectedRoute allowedRoles={['seller', 'admin']}>
+                <Layout><listedCars /></Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Messaging Routes */}
+          <Route
             path="/messaging/:id"
             element={
               <ProtectedRoute>
@@ -95,18 +112,10 @@ function App() {
             }
           />
           <Route
-            path="/messaging/"
+            path="/messaging"
             element={
               <ProtectedRoute>
                 <Layout><MessagingPage /></Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/wishlist"
-            element={
-              <ProtectedRoute>
-                <Layout><Wishlist /></Layout>
               </ProtectedRoute>
             }
           />

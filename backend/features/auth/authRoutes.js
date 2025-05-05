@@ -12,6 +12,7 @@ router.get('/me', isAuthenticated, authController.getCurrentUser);
 router.get('/emails', authController.getAllEmails);
 router.get('/profile', isAuthenticated, authController.profile);
 router.post('/logout', authController.logout);
+router.put('/role', isAuthenticated, authController.updateRole);  // New route for role update
 
 // Google OAuth
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));

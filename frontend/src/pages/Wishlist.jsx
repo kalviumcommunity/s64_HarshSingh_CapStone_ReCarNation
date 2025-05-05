@@ -1,57 +1,83 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
-import { Heart, Trash2 } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { CarCard } from '@/components/productCards'; // Import the CarCard component
 
 const Wishlist = () => {
-  const { user, token } = useSelector((state) => state.auth);
-  const [wishlist, setWishlist] = useState([]);
+  const { user } = useAuth();
+  const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchWishlist = async () => {
-      try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/wishlist`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setWishlist(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to fetch wishlist");
-        setLoading(false);
-      }
-    };
-
+    if (user) {
+      fetchWishlist();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const fetchWishlist = async () => {
     try {
+      setLoading(true);
       const response = await axios.get('http://localhost:3000/api/wishlist', {
         withCredentials: true
       });
-      setWishlist(response.data);
+      
+      console.log("Wishlist data:", response.data);
+      
+      // Process the wishlist data to ensure it contains the needed product information
+      const processedItems = response.data.map(item => {
+        // Handle different API response structures
+        const productData = item.productId || item;
+        
+        // Make sure we have valid data
+        if (!productData || typeof productData !== 'object') {
+          console.warn("Invalid product data in wishlist item:", item);
+          return null;
+        }
+        
+        // Create a normalized product object that works with the CarCard component
+        return {
+          ...productData,
+          // Ensure these key fields exist with fallbacks
+          _id: productData._id || item._id,
+          company: productData.make || productData.company || "Unknown",
+          model: productData.model || "Unknown",
+          KilometersTraveled: productData.mileage || productData.KilometersTraveled || 0,
+          price: productData.price || 0,
+          location: productData.location || "Not specified",
+          images: productData.images || [],
+          year: productData.year || "N/A",
+          fuelType: productData.fuelType || "Not specified"
+        };
+      }).filter(item => item !== null);
+      
+      setWishlistItems(processedItems);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
+      setError('Failed to load wishlist. Please try again.');
       toast.error('Failed to load wishlist');
     } finally {
       setLoading(false);
-
     }
-  }, [token]);
+  };
 
   const removeFromWishlist = async (carId) => {
     try {
-
-      await axios.delete(`http://localhost:3000/api/wishlist/${productId}`, {
+      await axios.delete(`http://localhost:3000/api/wishlist/${carId}`, {
         withCredentials: true
-
       });
-      setWishlist(wishlist.filter((item) => item._id !== carId));
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to remove from wishlist");
+      
+      setWishlistItems(wishlistItems.filter(item => item._id !== carId));
+      toast.success('Removed from wishlist');
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      toast.error('Failed to remove from wishlist');
     }
   };
 
@@ -59,68 +85,68 @@ const Wishlist = () => {
   if (error) return <div>Error: {error}</div>;
   if (!user) return <div>Please login to view your wishlist</div>;
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Your Wishlist</h1>
-      {wishlist.length === 0 ? (
-        <div className="text-center py-12">
-          <Heart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Your Wishlist is Empty
-          </h2>
-          <p className="text-gray-600 mb-6">
-            You haven't added any cars to your wishlist yet.
-          </p>
-          <Link
-            to="/browse"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
-          >
-            Browse Cars
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {wishlist.map((car) => (
-            <div
-              key={car._id}
-              className="bg-white rounded-lg shadow overflow-hidden"
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 flex-grow">
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4">{error}</p>
+            <button 
+              onClick={fetchWishlist}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              <div className="relative">
-                <img
-                  src={car.images[0] || "https://via.placeholder.com/300x200"}
-                  alt={`${car.make} ${car.model}`}
-                  className="w-full h-48 object-cover"
-                />
-                <button
-                  onClick={() => removeFromWishlist(car._id)}
-                  className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-50"
-                >
-                  <Trash2 className="h-5 w-5 text-red-500" />
-                </button>
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold">
-                  {car.make} {car.model}
-                </h3>
-                <p className="text-gray-600 mb-2">{car.year}</p>
-                <p className="text-xl font-bold text-blue-600">
-                  ${car.price.toLocaleString()}
-                </p>
-                <div className="mt-4">
-                  <Link
-                    to={`/car/${car._id}`}
-                    className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
+              Try Again
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 flex-grow">
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4">{error}</p>
+            <button 
+              onClick={fetchWishlist}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <div className="max-w-7xl mx-auto py-8 px-4 flex-grow">
+        <h1 className="text-3xl font-bold mb-8">My Wishlist</h1>
+        
+        {!wishlistItems || wishlistItems.length === 0 ? (
+          <div className="text-center py-12">
+            <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">Your wishlist is empty</p>
+            <Link to="/browse" className="text-blue-600 hover:text-blue-800 mt-4 inline-block">
+              Browse Cars
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {wishlistItems.map((product) => (
+              <CarCard 
+                key={product._id} 
+                product={product}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default Wishlist; 
+export default Wishlist;

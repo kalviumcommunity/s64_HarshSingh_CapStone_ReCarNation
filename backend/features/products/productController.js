@@ -10,80 +10,80 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+class ProductController {
+    static async createProduct(req, res) {
+        try {
+            console.log('Request body:', req.body);
+            console.log('Request files:', req.files);
 
-const createProduct = async (req, res) => {
-    try {
-        console.log('Request body:', req.body);
-        console.log('Request files:', req.files);
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({ message: 'At least one image is required' });
+            }
 
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: 'At least one image is required' });
+            const {
+                make,
+                model,
+                year,
+                trim,
+                mileage,
+                price,
+                transmission,
+                fuelType,
+                description,
+                location,
+                contactNumber
+            } = req.body;
+
+            // Validate required fields
+            if (!make || !model || !year || !mileage || !price || !location || !contactNumber) {
+                return res.status(400).json({ message: 'All required fields must be filled' });
+            }
+
+            const images = await Promise.all(
+                req.files.map(async (file) => {
+                    try {
+                        const result = await cloudinary.uploader.upload(file.path, {
+                            folder: 'car_listings'
+                        });
+                        return {
+                            url: result.secure_url,
+                            publicId: result.public_id
+                        };
+                    } catch (uploadError) {
+                        console.error('Error uploading image:', uploadError);
+                        throw new Error('Failed to upload images');
+                    }
+                })
+            );
+
+            // Create new product with proper image format and listedBy field
+            const newProduct = new Product({
+                make,
+                model,
+                year: parseInt(year),
+                trim,
+                mileage: parseInt(mileage),
+                price: parseFloat(price),
+                transmission,
+                fuelType,
+                description,
+                location,
+                contactNumber,
+                images: images,
+                listedBy: req.user._id // Get from authenticated user
+            });
+
+            const savedProduct = await newProduct.save();
+            console.log('Product created successfully:', savedProduct);
+            res.status(201).json(savedProduct);
+        } catch (error) {
+            console.error('Error creating product:', error);
+            res.status(500).json({ 
+                message: 'Error creating product', 
+                error: error.message,
+                details: error.stack 
+            });
         }
-
-        const {
-            make,
-            model,
-            year,
-            trim,
-            mileage,
-            price,
-            transmission,
-            fuelType,
-            description,
-            location,
-            contactNumber
-        } = req.body;
-
-        // Validate required fields
-        if (!make || !model || !year || !mileage || !price || !location || !contactNumber) {
-            return res.status(400).json({ message: 'All required fields must be filled' });
-        }
-
-        const images = await Promise.all(
-            req.files.map(async (file) => {
-              try {
-                const result = await cloudinary.uploader.upload(file.path, {
-                  folder: 'car_listings'
-                });
-                return {
-                  url: result.secure_url,
-                  publicId: result.public_id
-                };
-              } catch (uploadError) {
-                console.error('Error uploading image:', uploadError);
-                throw new Error('Failed to upload images');
-              }
-            })
-          );
-          
-
-        // Create new product with proper image format and listedBy field
-        const newProduct = new Product({
-            make,
-            model,
-            year: parseInt(year),
-            trim,
-            mileage: parseInt(mileage),
-            price: parseFloat(price),
-            transmission,
-            fuelType,
-            description,
-            location,
-            contactNumber,
-            images: images,
-            listedBy: req.user._id // Get from authenticated user
-        });
-
-        const savedProduct = await newProduct.save();
-        console.log('Product created successfully:', savedProduct);
-        res.status(201).json(savedProduct);
-    } catch (error) {
-        console.error('Error creating product:', error);
-        res.status(500).json({ 
-            message: 'Error creating product', 
-            error: error.message,
-            details: error.stack 
-        });
     }
 
     static async getAllProducts(req, res) {
@@ -190,7 +190,35 @@ const createProduct = async (req, res) => {
             res.status(500).json({ message: 'Error deleting product', error: error.message });
         }
     }
+
+    static async getUserProducts(req, res) {
+        try {
+            const products = await Product.find({ listedBy: req.user._id })
+                .sort({ createdAt: -1 });
+            res.json(products);
+        } catch (error) {
+            res.status(500).json({ 
+                message: 'Error fetching user products', 
+                error: error.message 
+            });
+        }
+    }
+
+    static async getAllProductsAdmin(req, res) {
+        try {
+            if (req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'Access denied' });
+            }
+            const products = await Product.find()
+                .sort({ createdAt: -1 });
+            res.json(products);
+        } catch (error) {
+            res.status(500).json({ 
+                message: 'Error fetching all products', 
+                error: error.message 
+            });
+        }
+    }
 }
 
 module.exports = ProductController;
-
