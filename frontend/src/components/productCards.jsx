@@ -1,10 +1,11 @@
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect, memo, useRef, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Car, MapPin, Calendar, Fuel, BarChart3, Heart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Car, MapPin, Calendar, Fuel, BarChart3, Heart, Trash2, Edit } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 // PropTypes are defined in comments for documentation
 /**
@@ -41,15 +42,58 @@ import { useAuth } from '@/context/AuthContext';
 const API_BASE_URL = 'http://localhost:3000/api';
 
 // Memoized car card component for better performance
-const CarCard = memo(({ product }) => {
+const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
   const { user } = useAuth();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageError, setImageError] = useState(false);
+  const retryCount = useRef(0);
+  const location = useLocation();
 
-  const canEditDelete = user && (
+  // Initialize image URL
+  useEffect(() => {
+    if (!product.images || product.images.length === 0) {
+      setImageUrl("https://via.placeholder.com/400x300?text=No+Image+Available");
+      setImageError(true);
+      setIsLoading(false);
+      return;
+    }
+
+    const firstImage = product.images[0];
+    const url = firstImage?.url || firstImage;
+    if (!url) {
+      setImageUrl("https://via.placeholder.com/400x300?text=No+Image+Available");
+      setImageError(true);
+      setIsLoading(false);
+      return;
+    }
+
+    setImageUrl(url);
+    setImageError(false);
+    retryCount.current = 0;
+  }, [product.images]);
+
+  // Retry loading image if it fails
+  const retryLoadImage = useCallback(() => {
+    if (retryCount.current >= 3 || imageError) {
+      return;
+    }
+
+    retryCount.current += 1;
+    setTimeout(() => {
+      setImageUrl(prev => prev + '?retry=' + retryCount.current);
+    }, 3000);
+  }, [imageError]);
+
+  const canEditDelete = currentUserIsOwner || (user && (
     user.role === 'admin' || 
     (user.role === 'seller' && product.listedBy === user._id)
-  );
+  ));
+
+  // Only show edit/delete on listed-cars page
+  const showEditDelete = location.pathname === '/listed-cars' && canEditDelete;
 
   useEffect(() => {
     const checkWishlistStatus = async () => {
@@ -104,25 +148,25 @@ const CarCard = memo(({ product }) => {
     }
   };
 
-  // Memoize image URL calculation
-  const imageUrl = React.useMemo(() => {
-    if (!product.images || product.images.length === 0) {
-      return "https://via.placeholder.com/400x300?text=No+Image+Available";
-    }
-    
-    // Handle both Cloudinary and local image formats
-    const firstImage = product.images[0];
-    return firstImage?.url || firstImage || "https://via.placeholder.com/400x300?text=No+Image+Available";
-  }, [product.images]);
-
   const handleDelete = async (productId) => {
+    if (!window.confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeleting(true);
     try {
       await axios.delete(`${API_BASE_URL}/products/${productId}`, {
         withCredentials: true
       });
-      // Optionally, you can refresh the product list or show a success message
+      toast.success('Listing deleted successfully');
+      if (onDelete) {
+        onDelete(productId);
+      }
     } catch (error) {
       console.error('Error deleting product:', error);
+      toast.error('Failed to delete listing');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -132,8 +176,17 @@ const CarCard = memo(({ product }) => {
         <img 
           src={imageUrl} 
           alt={`${product.company} ${product.model}`}
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+          className={`w-full h-full object-cover hover:scale-105 transition-transform duration-500 ${imageError ? 'opacity-50' : ''}`}
           loading="lazy"
+
+          onError={(e) => {
+            if (retryCount.current < 3 && !imageError) {
+              retryLoadImage();
+            } else {
+              e.target.src = "https://via.placeholder.com/400x300?text=No+Image+Available";
+              setImageError(true);
+            }
+          }}
         />
         {product.isFeatured && (
           <Badge className="absolute top-2 right-2 bg-orange-600 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full">
@@ -204,7 +257,7 @@ const CarCard = memo(({ product }) => {
           </Button>
         </div>
 
-        {canEditDelete && (
+        {showEditDelete && (
           <div className="flex gap-2 mt-2 border-t pt-2">
             <Link 
               to={`/edit-car/${product._id}`}
@@ -214,6 +267,7 @@ const CarCard = memo(({ product }) => {
                 variant="outline"
                 className="w-full text-xs h-7 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
               >
+                <Edit className="h-3.5 w-3.5 mr-1" />
                 Edit
               </Button>
             </Link>
@@ -221,8 +275,10 @@ const CarCard = memo(({ product }) => {
               variant="outline"
               className="flex-1 text-xs h-7 border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
               onClick={() => handleDelete(product._id)}
+              disabled={isDeleting}
             >
-              Delete
+              <Trash2 className="h-3.5 w-3.5 mr-1" />
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         )}
@@ -322,7 +378,9 @@ const CarListingContainer = memo(({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map(product => (
-        <CarCard key={product._id} product={product} />
+        <CarCard key={product._id} product={product} onDelete={(deletedProductId) => {
+          setProducts(products.filter(product => product._id !== deletedProductId));
+        }} />
       ))}
     </div>
   );

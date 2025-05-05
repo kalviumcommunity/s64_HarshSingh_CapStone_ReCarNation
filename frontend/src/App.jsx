@@ -19,7 +19,7 @@ import ProductCars from '@/pages/productCars';
 import ProfileSettings from '@/pages/profilePages/profileSettings';
 import Consent from '@/pages/profilePages/concent';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import listedCars from '@/pages/profilePages/listedCars';
+import ListedCars from '@/pages/profilePages/listedCars';
 
 
 function App() {
@@ -97,7 +97,7 @@ function App() {
             path="/listed-cars"
             element={
               <ProtectedRoute allowedRoles={['seller', 'admin']}>
-                <Layout><listedCars /></Layout>
+                <Layout><ListedCars /></Layout>
               </ProtectedRoute>
             }
           />

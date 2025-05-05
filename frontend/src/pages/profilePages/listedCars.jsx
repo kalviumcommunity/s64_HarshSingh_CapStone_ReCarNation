@@ -5,6 +5,7 @@ import { CarCard } from '@/components/productCards';
 import { Button } from '@/components/ui/button';
 import { Car } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 const ListedCars = () => {
   const { user } = useAuth();
@@ -16,14 +17,32 @@ const ListedCars = () => {
     const fetchCars = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
+        // Debug log
+        console.log('Fetching cars for user:', user?._id);
+        
         const endpoint = user?.role === 'admin' ? '/api/products/admin/all' : '/api/products/mine';
         const response = await axios.get(`http://localhost:3000${endpoint}`, {
-          withCredentials: true
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
-        setCars(response.data || []);
+
+        // Debug log
+        console.log('API Response:', response.data);
+        
+        if (!response.data) {
+          throw new Error('No data received from server');
+        }
+
+        setCars(response.data);
       } catch (err) {
-        console.error('Error fetching cars:', err);
-        setError('Failed to load cars. Please try again later.');
+        console.error('Error fetching cars:', err.response || err);
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to load cars';
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -33,17 +52,6 @@ const ListedCars = () => {
       fetchCars();
     }
   }, [user]);
-
-  if (!user) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 mb-4">Please log in to view your listings</p>
-        <Link to="/login" className="text-blue-600 hover:underline">
-          Login
-        </Link>
-      </div>
-    );
-  }
 
   const handleDelete = async (carId) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) {
@@ -55,11 +63,24 @@ const ListedCars = () => {
         withCredentials: true
       });
       setCars(cars.filter(car => car._id !== carId));
+      toast.success('Listing deleted successfully');
     } catch (err) {
-      console.error('Error deleting car:', err);
-      alert('Failed to delete the listing. Please try again.');
+      console.error('Error deleting car:', err.response || err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to delete listing';
+      toast.error(errorMessage);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600 mb-4">Please log in to view your listings</p>
+        <Link to="/login" className="text-blue-600 hover:underline">
+          Login
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -111,26 +132,12 @@ const ListedCars = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cars.map((car) => (
-            <div key={car._id} className="relative group">
-              <CarCard product={car} />
-              {(user.role === 'admin' || car.listedBy === user._id) && (
-                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Link to={`/edit-car/${car._id}`}>
-                    <Button size="sm" variant="secondary" className="bg-blue-600 hover:bg-blue-700 text-white">
-                      Edit
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(car._id)}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              )}
-            </div>
+            <CarCard 
+              key={car._id} 
+              product={car}
+              onDelete={handleDelete}
+              currentUserIsOwner={user._id === car.listedBy || user.role === 'admin'}
+            />
           ))}
         </div>
       )}
