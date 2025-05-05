@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { CarCard } from '@/components/productCards'; // Import the CarCard component
+import { CarCard } from '@/components/productCards';
 
 const Wishlist = () => {
   const { user } = useAuth();
@@ -12,49 +12,23 @@ const Wishlist = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchWishlist();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
   const fetchWishlist = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await axios.get('http://localhost:3000/api/wishlist', {
         withCredentials: true
       });
       
-      console.log("Wishlist data:", response.data);
-      
-      // Process the wishlist data to ensure it contains the needed product information
       const processedItems = response.data.map(item => {
-        // Handle different API response structures
-        const productData = item.productId || item;
+        const productData = item.productId;
+        if (!productData) return null;
         
-        // Make sure we have valid data
-        if (!productData || typeof productData !== 'object') {
-          console.warn("Invalid product data in wishlist item:", item);
-          return null;
-        }
-        
-        // Create a normalized product object that works with the CarCard component
         return {
           ...productData,
-          // Ensure these key fields exist with fallbacks
-          _id: productData._id || item._id,
-          company: productData.make || productData.company || "Unknown",
-          model: productData.model || "Unknown",
-          KilometersTraveled: productData.mileage || productData.KilometersTraveled || 0,
-          price: productData.price || 0,
-          location: productData.location || "Not specified",
-          images: productData.images || [],
-          year: productData.year || "N/A",
-          fuelType: productData.fuelType || "Not specified"
+          inWishlist: true // Mark as already in wishlist
         };
-      }).filter(item => item !== null);
+      }).filter(Boolean); // Remove any null items
       
       setWishlistItems(processedItems);
     } catch (error) {
@@ -66,19 +40,42 @@ const Wishlist = () => {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      fetchWishlist();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
+
   const removeFromWishlist = async (productId) => {
     try {
       await axios.delete(`http://localhost:3000/api/wishlist/${productId}`, {
         withCredentials: true
       });
       
-      setWishlistItems(wishlistItems.filter(item => item._id !== productId));
+      setWishlistItems(prev => prev.filter(item => item._id !== productId));
       toast.success('Removed from wishlist');
     } catch (error) {
       console.error('Error removing from wishlist:', error);
       toast.error('Failed to remove from wishlist');
     }
   };
+
+  if (!user) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 flex-grow">
+          <div className="text-center py-12">
+            <p className="text-gray-600">Please login to view your wishlist</p>
+            <Link to="/auth" className="text-blue-600 hover:text-blue-800 mt-4 inline-block">
+              Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -127,6 +124,7 @@ const Wishlist = () => {
               <CarCard 
                 key={product._id} 
                 product={product}
+                onRemoveFromWishlist={() => removeFromWishlist(product._id)}
               />
             ))}
           </div>
