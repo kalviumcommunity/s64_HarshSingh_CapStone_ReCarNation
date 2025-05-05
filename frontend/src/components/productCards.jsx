@@ -42,9 +42,9 @@ import { toast } from 'react-hot-toast';
 const API_BASE_URL = 'http://localhost:3000/api';
 
 // Memoized car card component for better performance
-const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
+const CarCard = memo(({ product, onDelete, onRemoveFromWishlist }) => {
   const { user } = useAuth();
-  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(product.inWishlist || false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
@@ -52,6 +52,9 @@ const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
   const retryCount = useRef(0);
   const MAX_RETRIES = 2;
   const location = useLocation();
+
+  // Check if current user is the owner of the listing
+  const currentUserIsOwner = user && product.listedBy === user._id;
 
   // Initialize image URL with better error handling
   useEffect(() => {
@@ -117,13 +120,18 @@ const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
         return;
       }
 
+      if (product.inWishlist !== undefined) {
+        setIsInWishlist(product.inWishlist);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const response = await axios.get('http://localhost:3000/api/wishlist', {
           withCredentials: true
         });
-        // Check if the current product is in the wishlist
         const isProductInWishlist = response.data.some(item => 
-          item.productId._id === product._id
+          (item.productId._id === product._id) || (item.productId === product._id)
         );
         setIsInWishlist(isProductInWishlist);
       } catch (error) {
@@ -134,31 +142,40 @@ const CarCard = memo(({ product, onDelete, currentUserIsOwner }) => {
     };
 
     checkWishlistStatus();
-  }, [product._id, user]);
+  }, [product._id, user, product.inWishlist]);
 
   const toggleWishlist = async () => {
     if (!user) {
-      // Redirect to login or show login modal
+      toast.error('Please log in to add items to your wishlist');
       return;
     }
 
     try {
       if (isInWishlist) {
-        // Remove from wishlist
         await axios.delete(`http://localhost:3000/api/wishlist/${product._id}`, {
           withCredentials: true
         });
         setIsInWishlist(false);
+        toast.success('Removed from wishlist');
+        if (onRemoveFromWishlist) {
+          onRemoveFromWishlist();
+        }
       } else {
-        // Add to wishlist
         await axios.post('http://localhost:3000/api/wishlist', {
           productId: product._id
         }, {
           withCredentials: true
         });
         setIsInWishlist(true);
+        toast.success('Added to wishlist');
       }
     } catch (error) {
+      if (error.response?.status === 401) {
+        toast.error('Your session has expired. Please log in again.');
+        // Optionally redirect to login page or trigger re-authentication
+      } else {
+        toast.error(error.response?.data?.message || 'Error updating wishlist');
+      }
       console.error('Error toggling wishlist:', error);
     }
   };
