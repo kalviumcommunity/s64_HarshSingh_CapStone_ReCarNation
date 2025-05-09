@@ -6,16 +6,73 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Car, MapPin, Fuel, BarChart3, User, MessageSquare, Heart, Share2, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
-
+import { useAuth } from '@/context/AuthContext';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 const CarDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [message, setMessage] = useState("");
   const [carDetails, setCarDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+
+  // Check if the car is in user's wishlist
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await axios.get('http://localhost:3000/api/wishlist', {
+          withCredentials: true
+        });
+        const isCarInWishlist = response.data.some(item => item.productId._id === id);
+        setIsInWishlist(isCarInWishlist);
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [id, user]);
+
+  // Handle wishlist toggle
+  const handleWishlistToggle = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setIsWishlistLoading(true);
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        await axios.delete(`http://localhost:3000/api/wishlist/${id}`, {
+          withCredentials: true
+        });
+        toast.success('Removed from wishlist');
+      } else {
+        // Add to wishlist
+        await axios.post('http://localhost:3000/api/wishlist', {
+          productId: id
+        }, {
+          withCredentials: true
+        });
+        toast.success('Added to wishlist');
+      }
+      setIsInWishlist(!isInWishlist);
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      toast.error(error.response?.data?.message || 'Error updating wishlist');
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCarDetails = async () => {
@@ -142,9 +199,15 @@ const CarDetailsPage = () => {
                     Featured
                   </Badge>
                   <div className="absolute bottom-4 right-4 flex space-x-2">
-                    <Button variant="outline" size="sm" className="bg-white">
-                      <Heart className="h-4 w-4 mr-2" />
-                      Save
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-white hover:bg-blue-950 hover:text-white border-none"
+                      onClick={handleWishlistToggle}
+                      disabled={isWishlistLoading}
+                    >
+                      <Heart className={`h-4 w-4 mr-2 ${isInWishlist ? 'text-red-600' : ''}`} />
+                      {isInWishlist ? 'Remove from Wishlist' : 'Wishlist'}
                     </Button>
                     <Button variant="outline" size="sm" className="bg-white">
                       <Share2 className="h-4 w-4 mr-2" />
