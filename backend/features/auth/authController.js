@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../../model/userModel");
+const { uploadToCloudinary } = require('../middleware/uploadMiddleware');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Signup
@@ -268,6 +269,79 @@ exports.updateRole = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error updating role",
+      error: error.message
+    });
+  }
+};
+
+// Profile Image Upload
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const result = await uploadToCloudinary(req.file, 'profile-pictures');
+    const userId = req.user.id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { profilePicture: result.secure_url },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Profile picture updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture
+      }
+    });
+  } catch (error) {
+    console.error("Profile image upload error:", error);
+    res.status(500).json({
+      message: "Error uploading profile picture",
+      error: error.message
+    });
+  }
+};
+
+// Update Profile Image
+exports.updateProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+
+    // Upload to Cloudinary using the helper function
+    const result = await uploadToCloudinary(req.file);
+
+    // Update user's profile picture URL in database
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { profilePicture: result.secure_url },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      message: 'Profile picture updated successfully',
+      profilePicture: result.secure_url
+    });
+  } catch (error) {
+    console.error('Error updating profile picture:', error);
+    res.status(500).json({
+      message: 'Error updating profile picture',
       error: error.message
     });
   }
