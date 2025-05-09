@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Upload } from 'lucide-react';
+import axios from 'axios';
 
 const ProfileSettings = () => {
   const { user, updateUser } = useContext(AuthContext);
@@ -19,6 +22,8 @@ const ProfileSettings = () => {
     zipCode: '',
   });
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -31,6 +36,7 @@ const ProfileSettings = () => {
         state: user.state || '',
         zipCode: user.zipCode || '',
       });
+      setImagePreview(user.profilePicture);
     }
   }, [user]);
 
@@ -42,30 +48,78 @@ const ProfileSettings = () => {
     }));
   };
 
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await axios.post(
+        'http://localhost:3000/api/auth/profile/image',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          withCredentials: true
+        }
+      );
+
+      if (response.data) {
+        setImagePreview(response.data.profilePicture);
+        toast.success('Profile picture updated successfully!');
+        // Update user context if needed
+        if (updateUser) {
+          updateUser(response.data.user);
+        }
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.error(error.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/users/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
+      const response = await axios.put(
+        'http://localhost:3000/api/auth/profile',
+        { ...formData, profilePicture: imagePreview },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          withCredentials: true
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
+      if (response.data) {
+        updateUser(response.data.user);
+        toast.success('Profile updated successfully!');
+        navigate('/profile');
       }
-
-      const updatedUser = await response.json();
-      updateUser(updatedUser);
-      toast.success('Profile updated successfully!');
-      navigate('/profile');
     } catch (error) {
-      toast.error(error.message);
+      console.error('Profile update error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -78,6 +132,29 @@ const ProfileSettings = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-3xl font-bold mb-8">Profile Settings</h1>
+      
+      <div className="mb-8 flex flex-col items-center">
+        <div className="relative mb-4">
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={imagePreview} />
+            <AvatarFallback>{user.name?.[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <label className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-2 cursor-pointer hover:bg-blue-700 transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+              disabled={uploadingImage}
+            />
+            <Upload className="h-4 w-4 text-white" />
+          </label>
+        </div>
+        {uploadingImage && (
+          <p className="text-sm text-gray-500">Uploading image...</p>
+        )}
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name">Full Name</Label>
@@ -158,7 +235,7 @@ const ProfileSettings = () => {
         <Button
           type="submit"
           className="w-full bg-blue-600 hover:bg-blue-700"
-          disabled={loading}
+          disabled={loading || uploadingImage}
         >
           {loading ? 'Saving...' : 'Save Changes'}
         </Button>
@@ -167,4 +244,4 @@ const ProfileSettings = () => {
   );
 };
 
-export default ProfileSettings; 
+export default ProfileSettings;

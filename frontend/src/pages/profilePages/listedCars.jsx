@@ -39,7 +39,7 @@ const emptyCarForm = {
   fuelType: "Gasoline",
   transmission: "Automatic",
   description: "",
-  imageUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7"
+  imageUrl: ""
 };
 
 const API_URL = 'http://localhost:3000/api/products';
@@ -493,7 +493,7 @@ const ManageCarsPage = () => {
                     alt="Car preview" 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.target.src = "https://images.unsplash.com/photo-1649972904349-6e44c42644a7";
+                      e.target.src = "";
                     }} 
                   />
                 </div>
@@ -525,7 +525,7 @@ const ManageCarsPage = () => {
                       alt="Car image" 
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.target.src = "https://images.unsplash.com/photo-1649972904349-6e44c42644a7";
+                        e.target.src = "";
                       }} 
                     />
                     <button
