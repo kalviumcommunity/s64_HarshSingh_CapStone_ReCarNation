@@ -40,4 +40,13 @@ describe('Layout Component', () => {
     const container = screen.getByText('Content').parentElement;
     expect(container).toHaveClass('flex-grow');
   });
+
+  it('renders correctly without children', () => {
+    render(<Layout />);
+    
+    expect(screen.getByTestId('mock-header')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-footer')).toBeInTheDocument();
+    const mainContent = screen.getByRole('main');
+    expect(mainContent).toBeEmptyDOMElement();
+  });
 });

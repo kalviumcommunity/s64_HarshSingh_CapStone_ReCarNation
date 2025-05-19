@@ -57,6 +57,7 @@ global.fetch = jest.fn(() =>
 
 // Mock modules
 jest.mock('axios');
+axios.get.mockResolvedValue({ data: null }); // Default mock for auth check
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useParams: () => ({ id: 'test-car-id' }),
@@ -98,14 +99,25 @@ const mockCarData = {
   }
 };
 
-const renderComponent = () => {
-  return render(
-    <BrowserRouter>
+const renderComponent = async () => {
+  const result = render(
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <CarDetailsPage />
       </AuthProvider>
     </BrowserRouter>
   );
+  
+  // Wait for auth context to initialize
+  try {
+    await waitFor(() => {
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    });
+  } catch (error) {
+    // Ignore timeout errors from auth loading
+  }
+  
+  return result;
 };
 
 describe('CarDetailsPage Component', () => {
@@ -140,10 +152,10 @@ describe('CarDetailsPage Component', () => {
   });
 
   // Test 1: Loading State
-  it('displays loading state initially', () => {
+  it('displays loading state initially', async () => {
     // Mock fetch but don't resolve it yet
     global.fetch.mockImplementationOnce(() => new Promise(() => {}));
-    renderComponent();
+    await renderComponent();
     expect(screen.getByText('Loading car details...')).toBeInTheDocument();
   });
 
@@ -152,25 +164,26 @@ describe('CarDetailsPage Component', () => {
     mockFetchResponse(mockCarData);
     axios.get.mockResolvedValueOnce({ data: [] }); // Mock wishlist check
 
-    renderComponent();
+    await renderComponent();
     
     await waitFor(() => {
       expect(screen.getByText(mockCarData.title)).toBeInTheDocument();
-      expect(screen.getByText(`₹${mockCarData.price.toLocaleString()}`)).toBeInTheDocument();
-      expect(screen.getByText(mockCarData.description)).toBeInTheDocument();
     });
+    
+    expect(screen.getByText(`₹${mockCarData.price.toLocaleString()}`)).toBeInTheDocument();
+    expect(screen.getByText(mockCarData.description)).toBeInTheDocument();
   });
 
   // Test 3: Error State
   it('displays error message when data fetching fails', async () => {
     mockFetchResponse(null, 404);
     
-    renderComponent();
+    await renderComponent();
     
     await waitFor(() => {
       expect(screen.getByText('Oops! Something went wrong')).toBeInTheDocument();
-      expect(screen.getByText('Car not found')).toBeInTheDocument();
     });
+    expect(screen.getByText('Car not found')).toBeInTheDocument();
   });
 
   // Test 4: Wishlist Toggle - Not Logged In
@@ -179,11 +192,12 @@ describe('CarDetailsPage Component', () => {
     const navigate = jest.fn();
     jest.spyOn(require('react-router-dom'), 'useNavigate').mockReturnValue(navigate);
     
-    renderComponent();
+    await renderComponent();
+    
+    const wishlistButton = await screen.findByText('Wishlist');
+    fireEvent.click(wishlistButton);
     
     await waitFor(() => {
-      const wishlistButton = screen.getByText('Wishlist');
-      fireEvent.click(wishlistButton);
       expect(navigate).toHaveBeenCalledWith('/login');
     });
   });
