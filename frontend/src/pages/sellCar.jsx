@@ -18,7 +18,7 @@ const REQUIRED_FIELDS = {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const SellCarPage = () => {
   const navigate = useNavigate();
@@ -216,7 +216,7 @@ const SellCarPage = () => {
             console.log(pair[0] + ': ' + pair[1]);
         }
 
-        const response = await axios.post('http://localhost:3000/api/products/', formDataToSend, {
+        const response = await axios.post(`${API_BASE_URL}/api/products/`, formDataToSend, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             },

@@ -41,7 +41,7 @@ app.use(passport.session());
 
 const productRoutes = require('./features/products/productsRoutes');
 const wishlistRoutes = require('./features/wishlist/wishlistRoutes');
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 connectDB();
 
 app.use('/api/auth', authRoutes);

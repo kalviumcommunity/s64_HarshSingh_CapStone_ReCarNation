@@ -5,6 +5,8 @@ import { Car, ArrowRight, SearchIcon, ThumbsUp, Shield, DollarSign, Award, Chevr
 import axios from "axios";
 import { CarCard } from "@/components/productCards";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const HomePage = () => {
   const [featuredCars, setFeaturedCars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,27 +16,36 @@ const HomePage = () => {
     const fetchCars = async () => {
       try {
         // First try to fetch featured cars
-        const featuredResponse = await axios.get('http://localhost:3000/api/products', {
+        const featuredResponse = await axios.get(`${API_BASE_URL}/api/products`, {
           params: {
             featured: true,
             limit: 4
-          }
+          },
+          withCredentials: true
         });
         
-        if (featuredResponse.data && featuredResponse.data.length > 0) {
-          setFeaturedCars(featuredResponse.data);
+        // Make sure we have an array of products
+        const products = Array.isArray(featuredResponse.data) ? featuredResponse.data : 
+                        featuredResponse.data.products || [];
+        
+        if (products.length > 0) {
+          setFeaturedCars(products);
         } else {
           // If no featured cars, fetch random cars
-          const randomResponse = await axios.get('http://localhost:3000/api/products', {
+          const randomResponse = await axios.get(`${API_BASE_URL}/api/products`, {
             params: {
               limit: 4,
               sort: 'createdAt',
               order: 'desc'
-            }
+            },
+            withCredentials: true
           });
           
-          if (randomResponse.data && randomResponse.data.length > 0) {
-            setFeaturedCars(randomResponse.data);
+          const randomProducts = Array.isArray(randomResponse.data) ? randomResponse.data :
+                                randomResponse.data.products || [];
+          
+          if (randomProducts.length > 0) {
+            setFeaturedCars(randomProducts);
           } else {
             setError('No cars available at the moment');
           }
