@@ -39,7 +39,8 @@ import { toast } from 'react-hot-toast';
  */
 
 // API base URL - should be moved to an environment variable
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
 // Memoized car card component for better performance
 const CarCard = memo(({ product, onDelete, onRemoveFromWishlist }) => {
@@ -127,7 +128,7 @@ const CarCard = memo(({ product, onDelete, onRemoveFromWishlist }) => {
       }
 
       try {
-        const response = await axios.get('http://localhost:3000/api/wishlist', {
+        const response = await axios.get(`${API_BASE_URL}/api/wishlist`, {
           withCredentials: true
         });
         const isProductInWishlist = response.data.some(item => 
@@ -152,7 +153,7 @@ const CarCard = memo(({ product, onDelete, onRemoveFromWishlist }) => {
 
     try {
       if (isInWishlist) {
-        await axios.delete(`http://localhost:3000/api/wishlist/${product._id}`, {
+        await axios.delete(`${API_BASE_URL}/api/wishlist/${product._id}`, {
           withCredentials: true
         });
         setIsInWishlist(false);
@@ -161,7 +162,7 @@ const CarCard = memo(({ product, onDelete, onRemoveFromWishlist }) => {
           onRemoveFromWishlist();
         }
       } else {
-        await axios.post('http://localhost:3000/api/wishlist', {
+        await axios.post(`${API_BASE_URL}/api/wishlist`, {
           productId: product._id
         }, {
           withCredentials: true

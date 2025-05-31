@@ -10,6 +10,8 @@ import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const CarDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -28,7 +30,7 @@ const CarDetailsPage = () => {
       if (!user) return;
       
       try {
-        const response = await axios.get('http://localhost:3000/api/wishlist', {
+        const response = await axios.get(`${API_BASE_URL}/api/wishlist`, {
           withCredentials: true
         });
         const isCarInWishlist = response.data.some(item => item.productId._id === id);
@@ -52,13 +54,13 @@ const CarDetailsPage = () => {
     try {
       if (isInWishlist) {
         // Remove from wishlist
-        await axios.delete(`http://localhost:3000/api/wishlist/${id}`, {
+        await axios.delete(`${API_BASE_URL}/api/wishlist/${id}`, {
           withCredentials: true
         });
         toast.success('Removed from wishlist');
       } else {
         // Add to wishlist
-        await axios.post('http://localhost:3000/api/wishlist', {
+        await axios.post(`${API_BASE_URL}/api/wishlist`, {
           productId: id
         }, {
           withCredentials: true
@@ -84,7 +86,7 @@ const CarDetailsPage = () => {
 
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:3000/api/products/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
         
         if (!response.ok) {
           if (response.status === 404) {

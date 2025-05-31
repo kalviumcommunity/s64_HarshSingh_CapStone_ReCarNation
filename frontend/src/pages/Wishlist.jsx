@@ -6,6 +6,8 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { CarCard } from '@/components/productCards';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Wishlist = () => {
   const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -16,7 +18,7 @@ const Wishlist = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:3000/api/wishlist', {
+      const response = await axios.get(`${API_BASE_URL}/api/wishlist`, {
         withCredentials: true
       });
       
@@ -50,7 +52,7 @@ const Wishlist = () => {
 
   const removeFromWishlist = async (productId) => {
     try {
-      await axios.delete(`http://localhost:3000/api/wishlist/${productId}`, {
+      await axios.delete(`${API_BASE_URL}/api/wishlist/${productId}`, {
         withCredentials: true
       });
       
