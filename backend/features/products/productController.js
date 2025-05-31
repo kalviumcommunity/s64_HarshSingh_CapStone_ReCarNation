@@ -9,7 +9,7 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const createProduct = async (req, res) => {
+const createProduct = async (req, res) => { 
     try {
         console.log('Request body:', req.body);
         console.log('Request files:', req.files);
