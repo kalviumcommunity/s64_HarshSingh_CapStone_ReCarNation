@@ -4,6 +4,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Car, Calendar, MapPin, DollarSign, Package } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const OrdersPage = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
@@ -14,7 +16,7 @@ const OrdersPage = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:3000/api/orders', {
+        const response = await axios.get(`${API_BASE_URL}/api/orders`, {
           withCredentials: true
         });
         setOrders(response.data.orders);

@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 function UserProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -26,7 +28,7 @@ function UserProfilePage() {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/profile', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
           credentials: 'include'
         });
         
@@ -93,7 +95,7 @@ function UserProfilePage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:3000/api/auth/logout', {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       });

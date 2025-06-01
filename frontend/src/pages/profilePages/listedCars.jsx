@@ -42,7 +42,9 @@ const emptyCarForm = {
   imageUrl: ""
 };
 
-const API_URL = 'http://localhost:3000/api/products';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const API_URL = `${API_BASE_URL}/api/products`;
 
 const ManageCarsPage = () => {
   const { user } = useAuth();

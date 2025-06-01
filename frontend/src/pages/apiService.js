@@ -1,9 +1,9 @@
 // apiService.js
-const API_URL = 'http://localhost:3000/api'; // Adjust this to your backend URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Adjust this to your backend URL
 
 export const registerUser = async (userData) => {
   try {
-    const response = await fetch(`${API_URL}/auth/signup`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -27,7 +27,7 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (credentials) => {
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,7 +36,20 @@ export const loginUser = async (credentials) => {
       credentials: 'include', // Important for cookies
     });
     
-    const data = await response.json();
+    // Check if response is empty
+    const text = await response.text();
+    if (!text) {
+      throw new Error('Server returned empty response');
+    }
+
+    // Try to parse the response as JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Failed to parse response:', text);
+      throw new Error('Invalid server response');
+    }
     
     if (!response.ok) {
       throw new Error(data.message || 'Login failed');
@@ -51,7 +64,7 @@ export const loginUser = async (credentials) => {
 
 export const getUserProfile = async () => {
   try {
-    const response = await fetch(`${API_URL}/auth/profile`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

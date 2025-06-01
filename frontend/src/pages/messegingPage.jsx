@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-hot-toast';
 
+const API_WS_URL = import.meta.env.VITE_API_BASE_URL;
+
 const MessagingPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -22,7 +24,7 @@ const MessagingPage = () => {
     if (!user?.token) return;
 
     // Establish WebSocket connection
-    ws.current = new WebSocket(`ws://localhost:3001?token=${user.token}&conversationId=${id}`);
+    ws.current = new WebSocket(`ws://${API_WS_URL}/chat/ws?token=${user.token}&conversationId=${id}`);
 
     ws.current.onopen = () => {
       console.log('WebSocket connection established');

@@ -24,6 +24,8 @@ const Authentication = () => {
     setShowPassword(!showPassword);
   };
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const validateForm = () => {
     // Reset previous error messages
     setError("");
@@ -104,14 +106,14 @@ const Authentication = () => {
       
       // Open Google OAuth popup
       const popup = window.open(
-        "http://localhost:3000/api/auth/google",
+        `${API_BASE_URL}/api/auth/google`,
         "Google Auth",
         "width=600,height=600"
       );
 
       // Listen for message from popup
       window.addEventListener("message", async (event) => {
-        if (event.origin !== "http://localhost:3000") return;
+        if (event.origin !== `${API_BASE_URL}`) return;
         
         if (event.data.token && event.data.user) {
           // Store token and user data
@@ -246,7 +248,7 @@ const Authentication = () => {
               className="w-full"
               disabled={isLoading}
               onClick={() => {
-                window.location.href = "http://localhost:3000/api/auth/google";
+                window.location.href = `${API_BASE_URL}/api/auth/google`;
               }}
             >
               <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
