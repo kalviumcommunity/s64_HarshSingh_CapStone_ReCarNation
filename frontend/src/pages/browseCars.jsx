@@ -16,11 +16,13 @@ const BrowseCarPage = () => {
     features: []
   });
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:3000/api/products', {
+        const response = await axios.get(`${API_BASE_URL}/api/products`, {
           params: {
             minPrice: filters.priceRange[0],
             maxPrice: filters.priceRange[1],
@@ -29,9 +31,23 @@ const BrowseCarPage = () => {
             make: filters.make,
             model: filters.model,
             features: filters.features.join(',')
-          }
+          },
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          withCredentials: true
         });
-        setProducts(response.data || []);
+        
+        // Ensure we're getting an array of products
+        const productsData = response.data.products || response.data || [];
+        if (!Array.isArray(productsData)) {
+          console.error('Products data is not an array:', productsData);
+          setProducts([]);
+          setError('Invalid data format received from server');
+          return;
+        }
+        setProducts(productsData);
         setError(null);
       } catch (err) {
         console.error('Error fetching products:', err);
@@ -72,7 +88,7 @@ const BrowseCarPage = () => {
                 <p className="text-red-500 mb-4">{error}</p>
                 <Button 
                   onClick={() => window.location.reload()} 
-                  className="bg-brand-orange hover:bg-brand-lightOrange text-white"
+                  className="bg-orange-600 hover:bg-orange-500 text-white"
                 >
                   Try Again
                 </Button>

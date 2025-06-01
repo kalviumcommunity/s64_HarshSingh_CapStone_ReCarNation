@@ -25,6 +25,8 @@ const ProfileSettings = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -70,7 +72,7 @@ const ProfileSettings = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:3000/api/auth/profile/image',
+        `${API_BASE_URL}/api/auth/profile/image`,
         formData,
         {
           headers: {
@@ -102,7 +104,7 @@ const ProfileSettings = () => {
 
     try {
       const response = await axios.put(
-        'http://localhost:3000/api/auth/profile',
+        `${API_BASE_URL}/api/auth/profile`,
         { ...formData, profilePicture: imagePreview },
         {
           headers: {
