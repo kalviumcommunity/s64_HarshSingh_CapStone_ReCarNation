@@ -1,7 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Remove this line as it's not needed anymore
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const AuthContext = createContext();
 
@@ -20,9 +21,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
-          withCredentials: true
-        });
+        // Update to use axiosInstance without the API_BASE_URL prefix
+        const response = await axiosInstance.get('/auth/me');
         
         if (response.data && response.data.user) {
           const userData = {
@@ -73,9 +73,9 @@ export const AuthProvider = ({ children }) => {
 
   const updateUserRole = async (newRole) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/api/auth/role`, 
-        { role: newRole },
-        { withCredentials: true }
+      // Update to use axiosInstance without the API_BASE_URL prefix
+      const response = await axiosInstance.put('/auth/role', 
+        { role: newRole }
       );
 
       if (response.data && response.data.user) {
@@ -93,9 +93,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, {
-        withCredentials: true
-      });
+      // Update to use axiosInstance without the API_BASE_URL prefix
+      await axiosInstance.post('/auth/logout');
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
