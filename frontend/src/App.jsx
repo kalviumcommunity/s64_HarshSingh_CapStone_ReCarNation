@@ -4,7 +4,7 @@ import Home from '@/pages/home';
 import Login from '@/pages/auth';
 import Profile from '@/pages/profile';
 import SellCar from '@/pages/sellCar';
-import BrowseCar from '@/pages/BrowseCars';
+import BrowseCar from '@/pages/browseCars';
 import AboutUs from '@/pages/static/AboutUs';
 import Contact from '@/pages/static/Contact';
 import HelpCenter from '@/pages/static/HelpCenter';
