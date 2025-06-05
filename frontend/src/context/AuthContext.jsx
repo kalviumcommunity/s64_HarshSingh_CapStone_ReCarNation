@@ -4,6 +4,8 @@ import axiosInstance from '@/lib/axios';
 // Remove this line as it's not needed anymore
 // const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -21,8 +23,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+
         // Update to use axiosInstance without the API_BASE_URL prefix
         const response = await axiosInstance.get('/auth/me');
+
         
         if (response.data && response.data.user) {
           const userData = {
@@ -73,6 +77,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateUserRole = async (newRole) => {
     try {
+
       // Update to use axiosInstance without the API_BASE_URL prefix
       const response = await axiosInstance.put('/auth/role', 
         { role: newRole }
@@ -93,6 +98,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+
       // Update to use axiosInstance without the API_BASE_URL prefix
       await axiosInstance.post('/auth/logout');
       setUser(null);
