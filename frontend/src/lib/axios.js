@@ -3,7 +3,7 @@ import axios from 'axios';
 const isDevelopment = import.meta.env.MODE !== 'production';
 const baseURL = isDevelopment 
   ? 'http://localhost:3001/api'
-  : import.meta.env.VITE_API_URL;
+  : import.meta.env.VITE_API_BASE_URL;
 
 // Create axios instance with configuration
 const axiosInstance = axios.create({
