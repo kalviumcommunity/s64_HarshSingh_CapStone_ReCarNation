@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { loginUser, registerUser } from "./apiService";
+import { useAuth } from "@/context/AuthContext";
 
 const Authentication = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +20,7 @@ const Authentication = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isLoginPage = location.pathname === "/login";
+  const { login: authLogin } = useAuth();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -73,15 +75,20 @@ const Authentication = () => {
       if (isLoginPage) {
         // Handle login
         const response = await loginUser({ email, password });
-        setSuccess("Login successful!");
+        console.log('Login response:', response); // Debug log
         
-        // Store user info in localStorage or context if needed
-        localStorage.setItem("user", JSON.stringify(response.user));
-        
-        // Redirect to dashboard or home page after successful login
-        setTimeout(() => {
-          navigate("/home");
-        }, 1500);
+        if (response.user) {
+          // Update auth context with user data
+          await authLogin(response.user);
+          setSuccess("Login successful!");
+          
+          // Redirect to dashboard or home page after successful login
+          setTimeout(() => {
+            navigate("/home");
+          }, 1500);
+        } else {
+          throw new Error('Login failed - no user data received');
+        }
       } else {
         // Handle registration
         const response = await registerUser({ name, email, password });

@@ -29,8 +29,20 @@ axiosInstance.interceptors.request.use(
 
 // Response interceptor
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses
+    console.log(`[${response.config.method.toUpperCase()}] ${response.config.url}:`, response.data);
+    return response;
+  },
   async (error) => {
+    // Log errors
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
     const originalRequest = error.config;
 
     // If the error is a network error or the server is not responding

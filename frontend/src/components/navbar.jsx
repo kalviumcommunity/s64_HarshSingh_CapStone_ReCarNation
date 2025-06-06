@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
@@ -11,28 +11,24 @@ import {
   LogOut,
   Car
 } from "lucide-react";
-import { AuthContext } from "@/context/AuthContext";
-
-// Just for demo: replace with actual login state and user data
-const isLoggedIn = false;
-const user = {
-  firstName: "Alex",
-  photo: "https://randomuser.me/api/portraits/men/32.jpg",
-};
-// For wishlist, simulate 1+ items triggers a filled heart
-const wishlistCount = 0;
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
-  const { user: authUser, loading, logout } = useContext(AuthContext);
+  const { user: authUser, loading, logout } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
-  // Tooltip on heart
   const [heartHover, setHeartHover] = useState(false);
   const navigate = useNavigate();
 
+  console.log('Current auth user:', authUser); // For debugging
+
   const handleLogout = async () => {
-    await logout();
-    setAccountOpen(false);
-    navigate('/');
+    try {
+      await logout();
+      setAccountOpen(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
