@@ -18,37 +18,45 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Update to use axiosInstance without the API_BASE_URL prefix
-        const response = await axiosInstance.get('/auth/me');
-        
-        if (response.data && response.data.user) {
-          const userData = {
-            ...response.data.user,
-            photo: response.data.user.photo || "https://via.placeholder.com/32"
-          };
-          setUser(userData);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        if (error.response && (error.response.status === 401 || error.response.status === 404)) {
-          setUser(null);
-        } else {
-          console.error('Auth check failed:', error);
-        }
-      } finally {
-        setLoading(false);
+  const checkAuth = async () => {
+    try {
+      console.log('Checking auth status...');
+      const response = await axiosInstance.get('/auth/me');
+      
+      if (response.data && response.data.user) {
+        const userData = {
+          ...response.data.user,
+          photo: response.data.user.photo || "https://via.placeholder.com/32"
+        };
+        console.log('Setting user data:', userData);
+        setUser(userData);
+      } else {
+        console.log('No user data found');
+        setUser(null);
       }
-    };
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      if (error.response && (error.response.status === 401 || error.response.status === 404)) {
+        setUser(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     checkAuth();
   }, []);
 
   const login = async (userData) => {
     try {
+      console.log('Login called with:', userData);
+      const userWithDefaults = {
+        ...userData,
+        photo: userData.photo || "https://via.placeholder.com/32"
+      };
+      setUser(userWithDefaults);
+      return userWithDefaults;
       if (userData && userData.profileObj) {
         const formattedUser = {
           _id: userData.profileObj.googleId,

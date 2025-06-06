@@ -90,7 +90,7 @@ const ConsentContent = () => {
         code: verificationCode,
       });
   
-      const response = await axios.post('/verify', {
+      const response = await axios.post('/api/verify', {
         type: verificationDialog.type,
         contact,
         verificationId,
@@ -219,7 +219,9 @@ const ConsentContent = () => {
         open={verificationDialog.open}
         onOpenChange={(open) => !open && setVerificationDialog({ open: false, type: null })}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent 
+          className="sm:max-w-[425px]"
+          aria-describedby="verification-dialog-description">
           <DialogHeader>
             <DialogTitle>
               {verificationStep === 'input' ? 'Enter Contact Information' : 'Enter Verification Code'}

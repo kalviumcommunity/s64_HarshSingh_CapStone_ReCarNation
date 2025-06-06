@@ -36,25 +36,20 @@ export const loginUser = async (credentials) => {
       credentials: 'include', // Important for cookies
     });
     
-    // Check if response is empty
-    const text = await response.text();
-    if (!text) {
-      throw new Error('Server returned empty response');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
     }
 
-    // Try to parse the response as JSON
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error('Failed to parse response:', text);
-      throw new Error('Invalid server response');
-    }
+    const data = await response.json();
     
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
+    if (!data.user) {
+      throw new Error('No user data received');
     }
-    
+
+    // Log the received user data
+    console.log('Login response:', data);
+
     return data;
   } catch (error) {
     console.error('Login error:', error);
