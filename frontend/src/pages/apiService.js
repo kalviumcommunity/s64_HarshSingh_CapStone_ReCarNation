@@ -38,8 +38,8 @@ export const loginUser = async (credentials) => {
     
     const data = await response.json();
     
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
+    if (!data.user) {
+      throw new Error('No user data received');
     }
     
     if (!data.user) {

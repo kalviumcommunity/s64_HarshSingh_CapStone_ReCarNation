@@ -80,8 +80,10 @@ const Authentication = () => {
           // Update auth context with user data
           await authLogin(response.user);
           setSuccess("Login successful!");
+
           // Immediately navigate to avoid delay
           navigate("/home");
+
         } else {
           throw new Error('Login failed - no user data received');
         }

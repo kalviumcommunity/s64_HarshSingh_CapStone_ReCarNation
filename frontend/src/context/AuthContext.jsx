@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axiosInstance from '@/lib/axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -15,10 +17,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+
   const checkAuth = async () => {
     try {
       console.log('Checking auth status...');
       const response = await axiosInstance.get('/api/auth/me');
+
       
       if (response.data && response.data.user) {
         const userData = {
@@ -30,6 +34,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         console.log('No user data found');
         setUser(null);
+
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -39,7 +44,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Check auth status on mount and when dependencies change
   useEffect(() => {
     checkAuth();
   }, []);
@@ -47,6 +51,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (userData) => {
     try {
       console.log('Login called with:', userData);
+
       const formattedUser = {
         ...userData,
         photo: userData.photo || "https://via.placeholder.com/32"
@@ -57,6 +62,7 @@ export const AuthProvider = ({ children }) => {
       await checkAuth();
       
       return formattedUser;
+
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -74,6 +80,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateUserRole = async (newRole) => {
     try {
+
       const response = await axiosInstance.put('/api/auth/role', { role: newRole });
 
       if (response.data && response.data.user) {
@@ -91,6 +98,7 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
+
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, updateUserRole }}>
