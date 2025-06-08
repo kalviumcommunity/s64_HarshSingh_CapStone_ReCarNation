@@ -1,9 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axiosInstance from '@/lib/axios';
 
-// Remove this line as it's not needed anymore
-// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const AuthContext = createContext();
@@ -24,7 +21,8 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       console.log('Checking auth status...');
-      const response = await axiosInstance.get('/auth/me');
+      const response = await axiosInstance.get('/api/auth/me');
+
       
       if (response.data && response.data.user) {
         const userData = {
@@ -40,9 +38,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      if (error.response && (error.response.status === 401 || error.response.status === 404)) {
-        setUser(null);
-      }
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -55,48 +51,46 @@ export const AuthProvider = ({ children }) => {
   const login = async (userData) => {
     try {
       console.log('Login called with:', userData);
-      const userWithDefaults = {
+
+      const formattedUser = {
         ...userData,
         photo: userData.photo || "https://via.placeholder.com/32"
       };
-      setUser(userWithDefaults);
-      return userWithDefaults;
-      if (userData && userData.profileObj) {
-        const formattedUser = {
-          _id: userData.profileObj.googleId,
-          firstName: userData.profileObj.givenName,
-          lastName: userData.profileObj.familyName,
-          email: userData.profileObj.email,
-          photo: userData.profileObj.imageUrl || "https://via.placeholder.com/32"
-        };
-        setUser(formattedUser);
-      } else {
-        const formattedUser = {
-          ...userData,
-          photo: userData.photo || "https://via.placeholder.com/32"
-        };
-        setUser(formattedUser);
-      }
+      setUser(formattedUser);
+      
+      // Trigger an auth check to ensure we have the latest user state
+      await checkAuth();
+      
+      return formattedUser;
+
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
     }
   };
 
+  const logout = async () => {
+    try {
+      await axiosInstance.post('/api/auth/logout');
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   const updateUserRole = async (newRole) => {
     try {
 
-      // Update to use axiosInstance without the API_BASE_URL prefix
-      const response = await axiosInstance.put('/auth/role', 
-        { role: newRole }
-
-      );
+      const response = await axiosInstance.put('/api/auth/role', { role: newRole });
 
       if (response.data && response.data.user) {
         setUser(prev => ({
           ...prev,
           role: response.data.user.role
         }));
+        
+        // Refresh user data to ensure consistency
+        await checkAuth();
         return response.data.user;
       }
     } catch (error) {
@@ -105,17 +99,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
-    try {
-
-      // Update to use axiosInstance without the API_BASE_URL prefix
-      await axiosInstance.post('/auth/logout');
-
-      setUser(null);
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, updateUserRole }}>

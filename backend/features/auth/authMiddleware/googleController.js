@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../../../model/userModel");
+const { getCookieConfig } = require('../../../config/cookieConfig');
 
 exports.googleCallback = async (req, res) => {
   try {
@@ -39,18 +40,13 @@ exports.googleCallback = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, name: user.name, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "24h" }
     );
 
     // Set cookie with appropriate settings
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 3600000, // 1 hour
-    });
+    res.cookie("token", token, getCookieConfig());
 
-    // Create user data for localStorage
+    // Create user data object
     const userData = {
       id: user._id.toString(),
       name: user.name,
@@ -60,28 +56,37 @@ exports.googleCallback = async (req, res) => {
       googleId: user.googleId
     };
 
-    // Send HTML response with script to set localStorage and redirect
+    // Send HTML response that posts message to opener and closes
     res.send(`
       <!DOCTYPE html>
       <html>
         <head>
           <title>Authentication Successful</title>
           <script>
-            // Store user data in localStorage
-            localStorage.setItem('user', '${JSON.stringify(userData)}');
-            localStorage.setItem('token', '${token}');
-            
-            // Redirect to home page
-            window.location.href = 'http://localhost:5173/home';
+            if (window.opener) {
+              // Post message to opener
+              window.opener.postMessage(
+                {
+                  type: 'AUTH_SUCCESS',
+                  user: ${JSON.stringify(userData)}
+                }, 
+                '${process.env.FRONTEND_URL}'
+              );
+              // Close this window
+              window.close();
+            } else {
+              // Redirect if no opener
+              window.location.href = '${process.env.FRONTEND_URL}/home';
+            }
           </script>
         </head>
         <body>
-          <p>Redirecting...</p>
+          <p>Authentication successful! You can close this window.</p>
         </body>
       </html>
     `);
   } catch (error) {
     console.error("Google auth error:", error);
-    res.redirect("http://localhost:5173/login?error=auth_failed");
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
   }
 };

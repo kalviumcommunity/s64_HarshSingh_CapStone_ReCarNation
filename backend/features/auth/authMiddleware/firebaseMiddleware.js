@@ -1,14 +1,16 @@
 const admin = require('../../../config/firebase');
 const User = require('../../../model/userModel');
 
-exports.verifyFirebaseToken = async (req, res, next) => {
+exports.firebaseAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No authorization header found');
       return res.status(401).json({ message: 'No token provided' });
     }
 
     const idToken = authHeader.split('Bearer ')[1];
+    console.log('Verifying token...');
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     
     // Find or create user
