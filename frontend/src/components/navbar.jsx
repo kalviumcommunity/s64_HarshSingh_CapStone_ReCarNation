@@ -119,7 +119,7 @@ const Navbar = () => {
                 {authUser ? (
                   <img
                     src={authUser.photo || "https://via.placeholder.com/32"}
-                    alt={`${authUser.firstName.split(" ")[0]} ${authUser.lastName.split(" ")[0]}`}
+                    alt={`${authUser.firstName?.split(" ")[0] || ""} ${authUser.lastName?.split(" ")[0] || ""}`}
                     className="h-8 w-8 rounded-full object-cover border border-gray-300"
                   />
                 ) : (

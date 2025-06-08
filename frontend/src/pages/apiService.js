@@ -36,20 +36,16 @@ export const loginUser = async (credentials) => {
       credentials: 'include', // Important for cookies
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
-    }
-
     const data = await response.json();
     
     if (!data.user) {
       throw new Error('No user data received');
     }
-
-    // Log the received user data
-    console.log('Login response:', data);
-
+    
+    if (!data.user) {
+      throw new Error('No user data received');
+    }
+    
     return data;
   } catch (error) {
     console.error('Login error:', error);

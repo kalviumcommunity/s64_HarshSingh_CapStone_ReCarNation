@@ -1,8 +1,8 @@
 import axios from 'axios';
+import { auth } from './firebase';
 
 const isDevelopment = import.meta.env.MODE !== 'production';
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-
 
 // Create axios instance with configuration
 const axiosInstance = axios.create({
@@ -17,8 +17,16 @@ const axiosInstance = axios.create({
 
 // Request interceptor
 axiosInstance.interceptors.request.use(
-  (config) => {
-    // You could add authorization headers here if needed
+  async (config) => {
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        const token = await user.getIdToken();
+        config.headers.Authorization = `Bearer ${token}`;
+      } catch (error) {
+        console.error('Error getting auth token:', error);
+      }
+    }
     return config;
   },
   (error) => {
@@ -44,31 +52,22 @@ axiosInstance.interceptors.response.use(
     
     const originalRequest = error.config;
 
-    // If the error is a network error or the server is not responding
-    if (error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
-      console.log('Network error detected, retrying request...');
-      
-      // Only retry once
-      if (!originalRequest._retry) {
-        originalRequest._retry = true;
-        try {
-          return await axiosInstance(originalRequest);
-        } catch (retryError) {
-          console.error('Retry failed:', retryError);
-          return Promise.reject(retryError);
+    // If the error is 401 and we haven't retried yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          // Force token refresh
+          const token = await user.getIdToken(true);
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return axiosInstance(originalRequest);
         }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
       }
     }
-
-    // Handle 401 Unauthorized errors
-    if (error.response?.status === 401) {
-      console.log('Unauthorized request detected');
-      // You could dispatch a logout action or redirect here
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-
     return Promise.reject(error);
   }
 );

@@ -75,28 +75,24 @@ const Authentication = () => {
       if (isLoginPage) {
         // Handle login
         const response = await loginUser({ email, password });
-        console.log('Login response:', response); // Debug log
         
         if (response.user) {
           // Update auth context with user data
           await authLogin(response.user);
           setSuccess("Login successful!");
-          
-          // Redirect to dashboard or home page after successful login
-          setTimeout(() => {
-            navigate("/home");
-          }, 1500);
+
+          // Immediately navigate to avoid delay
+          navigate("/home");
+
         } else {
           throw new Error('Login failed - no user data received');
         }
       } else {
         // Handle registration
-        const response = await registerUser({ name, email, password });
+        await registerUser({ name, email, password });
         setSuccess("Registration successful! Please log in.");
-        
-        // Redirect to login page after successful registration
         setTimeout(() => {
-          navigate("/home");
+          navigate("/login");
         }, 1500);
       }
     } catch (err) {
@@ -119,23 +115,29 @@ const Authentication = () => {
       );
 
       // Listen for message from popup
-      window.addEventListener("message", async (event) => {
-        if (event.origin !== `${API_BASE_URL}`) return;
-        
-        if (event.data.token && event.data.user) {
-          // Store token and user data
-          localStorage.setItem("token", event.data.token);
-          localStorage.setItem("user", JSON.stringify(event.data.user));
-          
+      const messageHandler = async (event) => {
+        if (event.origin !== API_BASE_URL) return;
+
+        // Handle the auth success message
+        if (event.data.type === 'AUTH_SUCCESS' && event.data.user) {
+          // Store user data in auth context
+          await authLogin(event.data.user);
           setSuccess("Login successful!");
+          
+          // Remove event listener
+          window.removeEventListener("message", messageHandler);
+          
+          // Navigate to home
           setTimeout(() => {
             navigate("/home");
           }, 1500);
-        } else {
-          setError("Google authentication failed. Please try again.");
         }
+        
         setIsLoading(false);
-      });
+      };
+
+      // Add event listener for popup message
+      window.addEventListener("message", messageHandler);
     } catch (err) {
       setError(err.message || "Authentication failed. Please try again.");
       setIsLoading(false);
