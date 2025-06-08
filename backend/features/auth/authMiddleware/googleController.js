@@ -76,7 +76,7 @@ exports.googleCallback = async (req, res) => {
               window.close();
             } else {
               // Redirect if no opener
-              window.location.href = '${process.env.FRONTEND_URL}/home';
+              window.location.href = '${process.env.FRONTEND_URL}';
             }
           </script>
         </head>
