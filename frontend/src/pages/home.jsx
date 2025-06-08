@@ -278,7 +278,7 @@ const HomePage = () => {
                     quote: "Found my dream car at an amazing price. The verification process gave me confidence in my purchase."
                 },
                 {
-                    name: "Ruchi Tiwari",
+                    name: "Carrol Joe",
                     role: "Car Seller",
                     image: "https://randomuser.me/api/portraits/women/44.jpg",
                     quote: "Sold my car within a week! The platform made the process so smooth and secure."
