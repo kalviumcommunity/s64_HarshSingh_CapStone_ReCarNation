@@ -15,7 +15,7 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: 'http://localhost:5173', // Frontend URL
+  origin: process.env.FRONTEND_URL, // Frontend URL
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
@@ -41,10 +41,12 @@ app.use(passport.session());
 
 const productRoutes = require('./features/products/productsRoutes');
 const wishlistRoutes = require('./features/wishlist/wishlistRoutes');
+const verificationRoutes = require('./features/auth/verificationRoutes');
 const PORT = process.env.PORT || 3001;
 connectDB();
 
 app.use('/api/auth', authRoutes);
+app.use('/api/verify', verificationRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/uploads', express.static('uploads'));

@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react'; // Add useEffect
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import axios from '@/lib/axios';
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { app } from '@/lib/firebase';
 import {
   Dialog,
   DialogContent,
@@ -15,14 +17,28 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 const ConsentContent = () => {
   const navigate = useNavigate();
-  const { user, updateUserRole } = useAuth();
+  const { user, updateUserRole, login } = useAuth();
   const [currentRole, setCurrentRole] = useState(user?.role || 'buyer');
   const [isLoading, setIsLoading] = useState(false);
   const [verificationDialog, setVerificationDialog] = useState({ open: false, type: null });
   const [contact, setContact] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  const [verificationStep, setVerificationStep] = useState('input'); // 'input' or 'verify'
+  const [verificationStep, setVerificationStep] = useState('input');
   const [verificationId, setVerificationId] = useState(null);
+  const [confirmationResult, setConfirmationResult] = useState(null);
+
+  useEffect(() => {
+    // Initialize reCAPTCHA when component mounts
+    if (!window.recaptchaVerifier) {
+      const auth = getAuth(app);
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+      });
+    }
+  }, []);
 
   const handleRoleChange = async (newRole) => {
     if (currentRole === newRole) return;
@@ -46,35 +62,40 @@ const ConsentContent = () => {
     setVerificationStep('input');
     setContact('');
     setVerificationCode('');
+    setConfirmationResult(null);
   };
 
   const handleSendVerification = async () => {
     try {
       setIsLoading(true);
-      const endpoint = verificationDialog.type === 'phone' ? '/verify/phone' : '/verify/email';
-      console.log('Sending verification request to:', endpoint);
       
-      const response = await axios.post(endpoint, {
-        [verificationDialog.type === 'phone' ? 'phone' : 'email']: contact,
-      }, {
-        withCredentials: true
-      });
-
-      console.log('Verification response:', response.data);
-      
-      if (response.data.success) {
+      if (verificationDialog.type === 'phone') {
+        const auth = getAuth(app);
+        const formattedPhoneNumber = contact.startsWith('+') ? contact : `+${contact}`;
+        const confirmation = await signInWithPhoneNumber(
+          auth, 
+          formattedPhoneNumber,
+          window.recaptchaVerifier
+        );
+        setConfirmationResult(confirmation);
         setVerificationStep('verify');
-        if (response.data.verificationId) {
-          setVerificationId(response.data.verificationId);
-        }
         toast.success('Verification code sent successfully');
       } else {
-        console.error('Verification failed:', response.data);
-        toast.error(response.data.message || 'Failed to send verification code');
+        // Handle email verification
+        const response = await axios.post('/api/verify/email', {
+          email: contact,
+        }, {
+          withCredentials: true
+        });
+
+        if (response.data.success) {
+          setVerificationStep('verify');
+          toast.success('Verification email sent successfully');
+        }
       }
     } catch (error) {
-      console.error('Verification error:', error.response?.data || error);
-      toast.error(error.response?.data?.message || 'Error sending verification code');
+      console.error('Verification error:', error);
+      toast.error(error.message || 'Error sending verification code');
     } finally {
       setIsLoading(false);
     }
@@ -83,85 +104,74 @@ const ConsentContent = () => {
   const handleVerifyCode = async () => {
     try {
       setIsLoading(true);
-      console.log('Verifying code with data:', {
-        type: verificationDialog.type,
-        contact,
-        verificationId,
-        code: verificationCode,
-      });
-  
-      const response = await axios.post('/api/verify', {
-        type: verificationDialog.type,
-        contact,
-        verificationId,
-        code: verificationCode,
-      }, {
-        withCredentials: true
-      });
-  
-      console.log('Verification response:', response.data);
-  
-      if (response.data.success) {
-        toast.success('Verification successful');
-        setVerificationDialog({ open: false, type: null });
-  
-        // Refresh the entire user profile to get updated verification status
+
+      if (verificationDialog.type === 'phone') {
+        // Verify phone OTP using Firebase
+        await confirmationResult.confirm(verificationCode);
+        
+        // Update backend about successful verification
+        await axios.post('/verify', {
+          type: 'phone',
+          phone: contact
+        }, {
+          withCredentials: true
+        });
+
+        // Refresh user profile
         const { data: profileData } = await axios.get('/auth/me', {
           withCredentials: true
         });
-  
-        console.log('Updated profile data:', profileData);
-  
+
         if (profileData.user) {
-          // Update the user context with the new profile data
           login(profileData.user);
         }
+
+        toast.success('Phone number verified successfully');
+        setVerificationDialog({ open: false, type: null });
       } else {
-        console.error('Verification failed:', response.data);
-        toast.error(response.data.message || 'Invalid verification code');
+        // Handle email verification code
+        const response = await axios.post('/api/verify/email/confirm', {
+          code: verificationCode,
+          email: contact
+        }, {
+          withCredentials: true
+        });
+
+        if (response.data.success) {
+          const { data: profileData } = await axios.get('/auth/me', {
+            withCredentials: true
+          });
+
+          if (profileData.user) {
+            login(profileData.user);
+          }
+
+          toast.success('Email verified successfully');
+          setVerificationDialog({ open: false, type: null });
+        }
       }
     } catch (error) {
       console.error('Verification error:', error);
-      toast.error('Error verifying code');
+      toast.error(error.message || 'Invalid verification code');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
-      
-      {/* Role Management Section */}
+    <div className="container max-w-4xl mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2">Current Role: {currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}</h2>
-          <p className="text-gray-600">Select your role to access different features:</p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="border rounded-lg p-4 hover:border-orange-500 transition-colors">
-            <h3 className="font-semibold mb-2">Buyer</h3>
-            <p className="text-sm text-gray-600 mb-4">Browse and purchase vehicles</p>
-            <Button 
-              variant={currentRole === 'buyer' ? 'default' : 'outline'} 
-              className={currentRole === 'buyer' ? 'bg-orange-600' : 'border-orange-600 text-orange-600'} 
-              onClick={() => handleRoleChange('buyer')}
-              disabled={currentRole === 'buyer' || isLoading}
-            >
-              {isLoading && currentRole !== 'buyer' ? 'Updating...' : 
-                currentRole === 'buyer' ? 'Current Role' : 'Switch to Buyer'}
-            </Button>
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h2 className="text-lg font-semibold">Account Type</h2>
+            <p className="text-gray-600">Choose your account type</p>
           </div>
-
-          <div className="border rounded-lg p-4 hover:border-orange-500 transition-colors">
-            <h3 className="font-semibold mb-2">Seller</h3>
-            <p className="text-sm text-gray-600 mb-4">List and sell your vehicles</p>
-            <Button 
-              variant={currentRole === 'seller' ? 'default' : 'outline'} 
-              className={currentRole === 'seller' ? 'bg-orange-600' : 'border-orange-600 text-orange-600'} 
+          <div>
+            <Button
+              variant={currentRole === 'seller' ? "secondary" : "default"}
               onClick={() => handleRoleChange('seller')}
-              disabled={currentRole === 'seller' || isLoading}
+              disabled={isLoading || (currentRole === 'seller' && user?.role === 'seller')}
+              className="min-w-[120px]"
             >
               {isLoading && currentRole !== 'seller' ? 'Updating...' : 
                 currentRole === 'seller' ? 'Current Role' : 'Switch to Seller'}
@@ -178,7 +188,6 @@ const ConsentContent = () => {
         </div>
       </div>
 
-      {/* Verification Section */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-2">Account Verification</h2>
@@ -214,6 +223,9 @@ const ConsentContent = () => {
         </div>
       </div>
 
+      {/* Hidden reCAPTCHA container */}
+      <div id="recaptcha-container"></div>
+
       {/* Verification Dialog */}
       <Dialog 
         open={verificationDialog.open}
@@ -233,7 +245,7 @@ const ConsentContent = () => {
               <>
                 <Input
                   type={verificationDialog.type === 'phone' ? 'tel' : 'email'}
-                  placeholder={verificationDialog.type === 'phone' ? 'Enter phone number' : 'Enter email'}
+                  placeholder={verificationDialog.type === 'phone' ? 'Enter phone number (+1234567890)' : 'Enter email'}
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
                 />
@@ -279,23 +291,6 @@ const Consent = () => (
 export default Consent;
 
 
-  // Add this useEffect to check verification status on component mount
-  // useEffect(() => {
-  //   const checkVerificationStatus = async () => {
-  //     try {
-  //       const response = await axios.get('/verify/status', {
-  //         withCredentials: true
-  //       });
-        
-  //       if (response.data.success && response.data.user) {
-  //         // Update the user context with the latest verification status
-  //         login(response.data.user);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error checking verification status:', error);
-  //     }
-  //   };
-    
-  //   checkVerificationStatus();
-  // }, []);
+
+
 

@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       console.log('Checking auth status...');
-      const response = await axiosInstance.get('/auth/me');
+      const response = await axiosInstance.get('/api/auth/me');
       
       if (response.data && response.data.user) {
         const userData = {
@@ -32,16 +32,14 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
     } catch (error) {
-      if (error.response && (error.response.status === 401 || error.response.status === 404)) {
-        setUser(null);
-      } else {
-        console.error('Auth check failed:', error);
-      }
+      console.error('Auth check failed:', error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // Check auth status on mount and when dependencies change
   useEffect(() => {
     checkAuth();
   }, []);
@@ -49,61 +47,48 @@ export const AuthProvider = ({ children }) => {
   const login = async (userData) => {
     try {
       console.log('Login called with:', userData);
-      if (userData.profileObj) {
-        // Handle Google login data
-        const formattedUser = {
-          _id: userData.profileObj.googleId,
-          firstName: userData.profileObj.givenName,
-          lastName: userData.profileObj.familyName,
-          email: userData.profileObj.email,
-          photo: userData.profileObj.imageUrl || "https://via.placeholder.com/32"
-        };
-        setUser(formattedUser);
-        return formattedUser;
-      } else {
-        // Handle regular login data
-        const formattedUser = {
-          ...userData,
-          photo: userData.photo || "https://via.placeholder.com/32"
-        };
-        setUser(formattedUser);
-        return formattedUser;
-      }
+      const formattedUser = {
+        ...userData,
+        photo: userData.photo || "https://via.placeholder.com/32"
+      };
+      setUser(formattedUser);
+      
+      // Trigger an auth check to ensure we have the latest user state
+      await checkAuth();
+      
+      return formattedUser;
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
     }
   };
 
+  const logout = async () => {
+    try {
+      await axiosInstance.post('/api/auth/logout');
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   const updateUserRole = async (newRole) => {
     try {
-
-      // Update to use axiosInstance without the API_BASE_URL prefix
-      const response = await axiosInstance.put('/auth/role', 
-        { role: newRole }
-      );
+      const response = await axiosInstance.put('/api/auth/role', { role: newRole });
 
       if (response.data && response.data.user) {
         setUser(prev => ({
           ...prev,
           role: response.data.user.role
         }));
+        
+        // Refresh user data to ensure consistency
+        await checkAuth();
         return response.data.user;
       }
     } catch (error) {
       console.error('Role update failed:', error);
       throw error;
-    }
-  };
-
-  const logout = async () => {
-    try {
-
-      // Update to use axiosInstance without the API_BASE_URL prefix
-      await axiosInstance.post('/auth/logout');
-      setUser(null);
-    } catch (error) {
-      console.error('Logout failed:', error);
     }
   };
 
