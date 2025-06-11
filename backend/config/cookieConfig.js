@@ -1,9 +1,13 @@
-const getCookieConfig = () => ({
-  httpOnly: true,
-  secure: false, // Set to true in production
-  sameSite: 'lax',
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  path: '/'
-});
+const getCookieConfig = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  return {
+    httpOnly: true,
+    secure: isProduction, // Must be true in production
+    sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-site, 'lax' for local dev
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/'
+  };
+};
 
 module.exports = { getCookieConfig };

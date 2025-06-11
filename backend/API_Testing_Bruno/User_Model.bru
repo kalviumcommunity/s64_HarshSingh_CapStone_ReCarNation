@@ -1,0 +1,29 @@
+meta {
+  name: User_Model
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3001/api/auth/role
+  body: json
+  auth: bearer
+}
+
+headers {
+  : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZmViMmNjY2MzNDNlMGY1MTRmYjNiMSIsIm5hbWUiOiJIYXJzaCIsImVtYWlsIjoiaGFyc2hAZ21haWwuY29tIiwicm9sZSI6InNlbGxlciIsImlhdCI6MTc0OTY3MjAzMiwiZXhwIjoxNzQ5Njc1NjMyfQ.HByY4xAl9s0pmBPno5K8NLK5WF4LMxKLD0MjVYq7ogk
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZmViMmNjY2MzNDNlMGY1MTRmYjNiMSIsIm5hbWUiOiJIYXJzaCIsImVtYWlsIjoiaGFyc2hAZ21haWwuY29tIiwicm9sZSI6InNlbGxlciIsImlhdCI6MTc0OTY3NzM5MywiZXhwIjoxNzQ5NjgwOTkzfQ.aah8ENJQtFFqrUEODl1Kj8MJij7mU6xU-Hu4MKNfMUA
+}
+
+body:json {
+  {
+    "role" : "seller"
+  }
+}
+
+vars:pre-request {
+  token: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZmViMmNjY2MzNDNlMGY1MTRmYjNiMSIsIm5hbWUiOiJIYXJzaCIsImVtYWlsIjoiaGFyc2hAZ21haWwuY29tIiwicm9sZSI6InNlbGxlciIsImlhdCI6MTc0OTYzMTEzNywiZXhwIjoxNzQ5NjM0NzM3fQ.xtEoJNPx0S1M4dJILAAKgScKMDxtOs67MUZS7OKNxnE
+}
