@@ -1,0 +1,27 @@
+meta {
+  name: Wishlist_Model
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3001/api/wishlist/
+  body: json
+  auth: bearer
+}
+
+params:query {
+  : 
+}
+
+headers {
+  ~productId: 68165e24050b985a32cc75cf
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZmViMmNjY2MzNDNlMGY1MTRmYjNiMSIsIm5hbWUiOiJIYXJzaCIsImVtYWlsIjoiaGFyc2hAZ21haWwuY29tIiwicm9sZSI6InNlbGxlciIsImlhdCI6MTc0OTY3NzM5MywiZXhwIjoxNzQ5NjgwOTkzfQ.aah8ENJQtFFqrUEODl1Kj8MJij7mU6xU-Hu4MKNfMUA
+}
+
+body:json {
+  {"productId" : "68165e24050b985a32cc75cf"}
+}
