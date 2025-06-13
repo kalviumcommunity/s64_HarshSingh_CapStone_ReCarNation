@@ -5,6 +5,7 @@ const productController = require('./productController');
 const { isAuthenticated } = require('../auth/authMiddleware/authMiddleware');
 
 // Public routes
+router.get('/metadata', productController.getProductsMetadata);
 router.get('/', productController.getAllProducts);
 
 // Protected routes - specific routes before parameter routes
