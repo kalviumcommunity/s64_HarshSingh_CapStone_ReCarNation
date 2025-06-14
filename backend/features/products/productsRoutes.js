@@ -5,6 +5,7 @@ const productController = require('./productController');
 const { isAuthenticated } = require('../auth/authMiddleware/authMiddleware');
 
 // Public routes
+router.get('/metadata', productController.getProductsMetadata);
 router.get('/', productController.getAllProducts);
 
 // Protected routes - specific routes before parameter routes
@@ -21,4 +22,5 @@ router.post('/', isAuthenticated, upload.array('images', 10), productController.
 router.put('/:id', isAuthenticated, productController.updateProduct);
 router.delete('/:id', isAuthenticated, productController.deleteProduct);
 
-module.exports = router;
+module.exports = router;
+
