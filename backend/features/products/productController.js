@@ -87,12 +87,63 @@ const createProduct = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
-        const { featured, limit, sort, order } = req.query;
+        const {
+            featured,
+            limit,
+            sort,
+            order,
+            minPrice,
+            maxPrice,
+            minYear,
+            maxYear,
+            make,
+            model,
+            features,
+            search
+        } = req.query;
+
         let query = {};
 
         // If featured is true, only return featured cars
         if (featured === 'true') {
             query.isFeatured = true;
+        }
+
+        // Price range filter
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            query.price = {};
+            if (minPrice !== undefined) query.price.$gte = parseFloat(minPrice);
+            if (maxPrice !== undefined) query.price.$lte = parseFloat(maxPrice);
+        }
+
+        // Year range filter
+        if (minYear !== undefined || maxYear !== undefined) {
+            query.year = {};
+            if (minYear !== undefined) query.year.$gte = parseInt(minYear);
+            if (maxYear !== undefined) query.year.$lte = parseInt(maxYear);
+        }
+
+        // Make and model filters
+        if (make) query.make = make;
+        if (model) query.model = model;
+
+        // Features filter
+        if (features) {
+            const featureList = features.split(',').map(f => f.trim());
+            if (featureList.length > 0) {
+                query.features = { $all: featureList };
+            }
+        }
+
+        // Search functionality
+        if (search) {
+            const searchRegex = new RegExp(search, 'i');
+            query.$or = [
+                { make: searchRegex },
+                { model: searchRegex },
+                { description: searchRegex },
+                { location: searchRegex }
+            ];
         }
 
         // Build sort object
@@ -109,7 +160,7 @@ const getAllProducts = async (req, res) => {
             .sort(sortOptions)
             .limit(parseInt(limit) || 0);
 
-        res.json(products);
+        res.json({ products, total: products.length });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching products', error: error.message });
     }
@@ -303,6 +354,58 @@ const removeImage = async (req, res) => {
     }
 };
 
+// Get metadata for products
+const getProductsMetadata = async (req, res) => {
+    try {
+        const products = await Product.find({});
+        
+        // Extract unique makes and their models
+        const makeModels = {};
+        const years = [];
+        const prices = [];
+        
+        products.forEach(product => {
+            // Collect makes and models
+            if (product.make) {
+                if (!makeModels[product.make]) {
+                    makeModels[product.make] = new Set();
+                }
+                if (product.model) {
+                    makeModels[product.make].add(product.model);
+                }
+            }
+            
+            // Collect years and prices
+            if (product.year) years.push(product.year);
+            if (product.price) prices.push(product.price);
+        });
+
+        // Convert to the required format
+        const metadata = {
+            makes: Object.keys(makeModels).sort(),
+            models: Object.fromEntries(
+                Object.entries(makeModels).map(([make, models]) => [
+                    make,
+                    Array.from(models).sort()
+                ])
+            ),
+            yearRange: [
+                Math.min(...years) || 2000,
+                Math.max(...years) || new Date().getFullYear()
+            ],
+            priceRange: [
+                Math.min(...prices) || 0,
+                Math.max(...prices) || 10000000
+            ]
+        };
+
+        res.json(metadata);
+    } catch (error) {
+        console.error('Error fetching product metadata:', error);
+        res.status(500).json({ message: 'Error fetching product metadata' });
+    }
+};
+
 // Add new exports
 module.exports = {
     createProduct,
@@ -313,5 +416,7 @@ module.exports = {
     getUserProducts,
     getAllProductsAdmin,
     addImages,
-    removeImage
+    removeImage,
+    getProductsMetadata
 };
+
