@@ -17,9 +17,16 @@ const Navbar = () => {
   const { user: authUser, loading, logout } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
   const [heartHover, setHeartHover] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
-  console.log('Current auth user:', authUser); // For debugging
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/browse?search=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm("");
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -69,15 +76,22 @@ const Navbar = () => {
 
           {/* Search */}
           <div className="hidden md:flex items-center">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <input
                 type="search"
-                placeholder="Search..."
+                placeholder="Search cars..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-56 pl-4 pr-10 py-2 rounded-md border bg-[#F6F7FA] focus:ring-2 focus:ring-[#1EAEDB] transition"
                 style={{ fontFamily: "inherit" }}
               />
-              <Search className="absolute right-3 top-2.5 text-gray-400 h-5 w-5" />
-            </div>
+              <button 
+                type="submit"
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+            </form>
           </div>
 
           {/* Right section */}
