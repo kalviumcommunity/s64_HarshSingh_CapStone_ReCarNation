@@ -187,11 +187,38 @@ const CarDetailsPage = () => {
                 {/* Main Image */}
                 <div className="relative h-[400px]">
                   {carDetails.images && carDetails.images.length > 0 ? (
-                    <img 
-                      src={carDetails.images[activeImageIndex]?.url || carDetails.images[activeImageIndex]} 
-                      alt={carDetails.title || 'Car image'} 
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img 
+                        src={carDetails.images[activeImageIndex]?.url || carDetails.images[activeImageIndex]} 
+                        alt={carDetails.title || 'Car image'} 
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Navigation Buttons */}
+                      <div className="absolute inset-y-0 left-0 flex items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-12 w-12 rounded-full bg-black/30 text-white hover:bg-black/50 focus:outline-none ml-2"
+                          onClick={() => setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : carDetails.images.length - 1))}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                          </svg>
+                        </Button>
+                      </div>
+                      <div className="absolute inset-y-0 right-0 flex items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-12 w-12 rounded-full bg-black/30 text-white hover:bg-black/50 focus:outline-none mr-2"
+                          onClick={() => setActiveImageIndex((prev) => (prev < carDetails.images.length - 1 ? prev + 1 : 0))}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
+                        </Button>
+                      </div>
+                    </>
                   ) : (
                     <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                       <p className="text-gray-500">No images available</p>
