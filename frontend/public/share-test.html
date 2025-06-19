@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Share API Demo</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .share-button {
+            padding: 12px 24px;
+            font-size: 16px;
+            color: white;
+            background-color: #0070f3;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .share-button:hover {
+            background-color: #0051cc;
+        }
+
+        .share-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .status.success {
+            background-color: #4caf50;
+            color: white;
+            display: block;
+        }
+
+        .status.error {
+            background-color: #f44336;
+            color: white;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <button id="shareButton" class="share-button">Share This Page</button>
+    <div id="status" class="status"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const shareButton = document.getElementById('shareButton');
+            const statusDiv = document.getElementById('status');
+
+            // Check if Web Share API is supported
+            if (!navigator.share) {
+                shareButton.textContent = 'Share API not supported';
+                shareButton.disabled = true;
+                showStatus('This browser does not support the Web Share API', 'error');
+                return;
+            }
+
+            shareButton.addEventListener('click', async () => {
+                // Share data object
+                const shareData = {
+                    title: document.title,
+                    text: 'Check out this awesome Web Share API demo!',
+                    url: window.location.href
+                };
+
+                try {
+                    shareButton.disabled = true;
+                    shareButton.textContent = 'Sharing...';
+
+                    await navigator.share(shareData);
+                    showStatus('Successfully shared!', 'success');
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        showStatus('Share cancelled by user', 'error');
+                    } else {
+                        showStatus('Error sharing: ' + err.message, 'error');
+                    }
+                    console.error('Share failed:', err);
+                } finally {
+                    shareButton.disabled = false;
+                    shareButton.textContent = 'Share This Page';
+                }
+            });
+
+            function showStatus(message, type) {
+                statusDiv.textContent = message;
+                statusDiv.className = 'status ' + type;
+                setTimeout(() => {
+                    statusDiv.className = 'status';
+                }, 3000);
+            }
+
+            // Add feature detection info
+            console.log('Web Share API support:', {
+                'navigator.share': !!navigator.share,
+                'navigator.canShare': !!navigator.canShare,
+            });
+        });
+    </script>
+</body>
+</html>

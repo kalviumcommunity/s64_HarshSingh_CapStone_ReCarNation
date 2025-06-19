@@ -1,6 +1,6 @@
 # s64_HarshSingh_CapStone_ReCarNation
 
-# https://s64-harsh-singh-cap-stone-re-car-nation.vercel.app/login
+# https://s64-harsh-singh-cap-stone-re-car-na.vercel.app/
 
 # 📌 Project Overviewdocker-compose up --build
 ReCarNation is a web-based used car marketplace designed to facilitate seamless buying and selling of vehicles. The platform offers a secure authentication system, advanced search and filter capabilities, direct communication between buyers and sellers, and API-driven operations for efficient data management.
