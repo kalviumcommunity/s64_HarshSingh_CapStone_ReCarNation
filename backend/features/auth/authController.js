@@ -43,11 +43,13 @@ exports.login = async (req, res) => {
       { expiresIn: "1h" }
     );
 
+    // Updated cookie settings for cross-origin support in production
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 3600000,
+      secure: true, // Always use secure in production
+      sameSite: "None", // Required for cross-site cookie
+      path: "/",
+      maxAge: 3600000, // 1 hour
     });
 
     res.json({
@@ -99,11 +101,14 @@ exports.googleLogin = async (req, res) => {
       { expiresIn: "1h" }
     );
 
+    // Updated cookie settings for cross-origin support in production
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 3600000,
+      secure: true, // Always use secure in production
+      sameSite: "None", // Required for cross-site cookie
+      path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".onrender.com" : undefined, // Optional: restrict to your domain
+      maxAge: 3600000, // 1 hour
     });
 
     res.json({
@@ -172,8 +177,16 @@ exports.profile = async (req, res) => {
 
 // Logout
 exports.logout = (req, res) => {
-  res.clearCookie("token");
-  res.json({ message: "Logged out successfully" });
+  // Clear the cookie with matching settings
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+    path: "/",
+    domain: process.env.NODE_ENV === "production" ? ".onrender.com" : undefined,
+  });
+  
+  res.status(200).json({ message: "Logged out successfully" });
 };
 
 // Delete User
