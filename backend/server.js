@@ -42,6 +42,7 @@ app.use(passport.session());
 const productRoutes = require('./features/products/productsRoutes');
 const wishlistRoutes = require('./features/wishlist/wishlistRoutes');
 const verificationRoutes = require('./features/auth/verificationRoutes');
+const ordersRoutes = require('./features/orders/ordersRoutes');
 const PORT = process.env.PORT || 3001;
 connectDB();
 
@@ -49,6 +50,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/verify', verificationRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/orders', ordersRoutes);
 app.use('/uploads', express.static('uploads'));
 
 app.get("/", (req, res)=>{

@@ -4,6 +4,10 @@ const admin = require('../../../config/firebase');
 const { getCookieConfig } = require('../../../config/cookieConfig');
 
 exports.authenticate = async (req, res, next) => {
+  console.log('🔒 COMBINED AUTH MIDDLEWARE CALLED');
+  console.log('Headers:', req.headers.authorization ? 'Bearer token present' : 'No bearer token');
+  console.log('Cookies:', req.cookies.token ? 'JWT cookie present' : 'No JWT cookie');
+  
   try {
     // First try Firebase token
     const authHeader = req.headers.authorization;
