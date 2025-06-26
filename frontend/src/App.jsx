@@ -16,6 +16,7 @@ import Layout from "@/components/Layout";
 import Wishlist from '@/pages/Wishlist';
 import CarDetails from '@/pages/carDetails';
 import ProductCars from '@/pages/productCars';
+import OrderConfirmation from '@/pages/OrderConfirmation';
 import ProfileSettings from '@/pages/profilePages/profileSettings';
 import Consent from '@/pages/profilePages/concent';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -40,6 +41,16 @@ function App() {
           <Route path="/browse" element={<Layout><BrowseCar /></Layout>} />
           <Route path="/cars" element={<Layout><ProductCars /></Layout>} />
           <Route path="/car/:id" element={<Layout><CarDetails /></Layout>} />
+          
+          {/* Order Confirmation Route - Protected */}
+          <Route
+            path="/order-confirmation/:id"
+            element={
+              <ProtectedRoute>
+                <Layout><OrderConfirmation /></Layout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected Routes - Any authenticated user */}
           <Route
