@@ -99,9 +99,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (userData) => {
+    try {
+      console.log('Updating user data:', userData);
+      const formattedUser = {
+        ...userData,
+        photo: userData.photo || userData.profilePicture || "https://via.placeholder.com/32"
+      };
+      setUser(prev => ({
+        ...prev,
+        ...formattedUser
+      }));
+      return formattedUser;
+    } catch (error) {
+      console.error('Update user failed:', error);
+      throw error;
+    }
+  };
+
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUserRole }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUserRole, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -246,12 +246,17 @@ exports.getCurrentUser = async (req, res) => {
     // Return user data in the format expected by the frontend
     const formattedUser = {
       _id: userData._id,
+      name: userData.name,
       firstName: userData.name.split(' ')[0], // Assuming first name is the first part of the name
       lastName: userData.name.split(' ').slice(1).join(' '), // Rest of the name as last name
       email: userData.email,
       photo: userData.profilePicture, // Map profilePicture to photo
+      profilePicture: userData.profilePicture,
       role: userData.role,
-      isVerified: userData.isVerified
+      isVerified: userData.isVerified,
+      phone: userData.phone,
+      location: userData.location,
+      bio: userData.bio
     };
 
     res.status(200).json({ user: formattedUser });
@@ -293,6 +298,68 @@ exports.updateRole = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error updating role",
+      error: error.message
+    });
+  }
+};
+
+// Update Profile
+exports.updateProfile = async (req, res) => {
+  console.log('UPDATE PROFILE ENDPOINT HIT!');
+  console.log('Request body:', req.body);
+  console.log('User:', req.user);
+  
+  try {
+    const { name, email, profilePicture, bio, phone, location } = req.body;
+    const userId = req.user._id;
+
+    // Check if email is being changed and if it already exists
+    if (email && email !== req.user.email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+    }
+
+    // Prepare update data
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email.trim().toLowerCase();
+    if (profilePicture) updateData.profilePicture = profilePicture;
+    if (bio !== undefined) updateData.bio = bio;
+    if (phone) updateData.phone = phone;
+    if (location) updateData.location = location;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    console.log('Updated user:', user);
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        bio: user.bio,
+        phone: user.phone,
+        location: user.location,
+        isVerified: user.isVerified
+      }
+    });
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({
+      message: "Error updating profile",
       error: error.message
     });
   }

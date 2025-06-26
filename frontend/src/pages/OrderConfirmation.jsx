@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Car, Calendar, Fuel, MapPin, ShoppingCart } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
+import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -63,21 +64,28 @@ const OrderConfirmation = () => {
   }, [id]);
 
   // Handle order confirmation
-  const handleConfirmOrder = () => {
+  const handleOrder = async (payLater = false) => {
     if (!address.trim()) {
       alert('Please enter your delivery address');
       return;
     }
-    
-    // For now, just show a confirmation message
-    alert('Order confirmed! Payment integration will be added later.');
-    console.log('Order Details:', {
-      carId: id,
-      carTitle: carDetails.title,
-      price: carDetails.price,
-      address: address,
-      user: user
-    });
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/orders`,
+        {
+          productId: id,
+          address,
+          paymentStatus: payLater ? 'pending' : 'completed',
+          paymentMethod: payLater ? 'cash' : 'online',
+        },
+        { withCredentials: true }
+      );
+      if (res.status === 201) {
+        navigate('/orders');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to place order');
+    }
   };
 
   // Format price with proper null check
@@ -297,11 +305,18 @@ const OrderConfirmation = () => {
               <div className="space-y-4">
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 text-lg"
-                  onClick={handleConfirmOrder}
+                  onClick={() => handleOrder(false)}
                   disabled={!address.trim()}
                 >
                   <ShoppingCart className="h-5 w-5 mr-2" />
-                  Confirm Order
+                  Confirm & Pay Now
+                </Button>
+                <Button
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 text-lg"
+                  onClick={() => handleOrder(true)}
+                  disabled={!address.trim()}
+                >
+                  Pay Later
                 </Button>
                 
                 <Button

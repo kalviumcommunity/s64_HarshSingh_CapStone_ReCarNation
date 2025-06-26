@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload } from 'lucide-react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 
 const ProfileSettings = () => {
   const { user, updateUser } = useContext(AuthContext);
@@ -29,16 +29,19 @@ const ProfileSettings = () => {
 
   useEffect(() => {
     if (user) {
+      // Parse location back to separate fields if it exists
+      const locationParts = user.location ? user.location.split(', ') : ['', '', '', ''];
+      
       setFormData({
-        name: user.name || '',
+        name: user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : ''),
         email: user.email || '',
         phone: user.phone || '',
-        address: user.address || '',
-        city: user.city || '',
-        state: user.state || '',
-        zipCode: user.zipCode || '',
+        address: locationParts[0] || '',
+        city: locationParts[1] || '',
+        state: locationParts[2] || '',
+        zipCode: locationParts[3] || '',
       });
-      setImagePreview(user.profilePicture);
+      setImagePreview(user.profilePicture || user.photo);
     }
   }, [user]);
 
@@ -71,14 +74,13 @@ const ProfileSettings = () => {
     formData.append('image', file);
 
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/auth/profile/image`,
+      const response = await axiosInstance.post(
+        '/api/auth/profile/image',
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-          },
-          withCredentials: true
+          }
         }
       );
 
@@ -103,15 +105,23 @@ const ProfileSettings = () => {
     setLoading(true);
 
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/api/auth/profile`,
-        { ...formData, profilePicture: imagePreview },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          withCredentials: true
-        }
+      // Map form data to backend expected format
+      const profileData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        location: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`.trim(),
+        profilePicture: imagePreview
+      };
+
+      // Remove empty location
+      if (profileData.location === ', ,') {
+        profileData.location = '';
+      }
+
+      const response = await axiosInstance.put(
+        '/api/auth/profile',
+        profileData
       );
 
       if (response.data) {
