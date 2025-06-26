@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const CarDetailsPage = () => {
@@ -23,6 +24,7 @@ const CarDetailsPage = () => {
   const [error, setError] = useState(null);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+
 
   // Check if the car is in user's wishlist
   useEffect(() => {
@@ -112,6 +114,8 @@ const CarDetailsPage = () => {
 
     fetchCarDetails();
   }, [id]);
+
+
 
   // Loading state
   if (isLoading) {
@@ -448,6 +452,20 @@ const CarDetailsPage = () => {
                     <Phone className="h-5 w-5 mr-2" />
                     Show Phone Number
                   </Button>
+                  
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 text-lg"
+                    onClick={() => {
+                      if (!user) {
+                        navigate('/login');
+                        return;
+                      }
+                      navigate(`/order-confirmation/${id}`);
+                    }}
+                  >
+                    <Car className="h-5 w-5 mr-2" />
+                    Buy Now
+                  </Button>
                 </div>
                 
                 <div className="border-t pt-4">
@@ -490,6 +508,7 @@ const CarDetailsPage = () => {
             </div>
           </div>
         </div>
+
       </main>
       
     </div>

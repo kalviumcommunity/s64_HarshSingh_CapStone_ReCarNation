@@ -49,6 +49,7 @@ exports.login = async (req, res) => {
       secure: true, // Always use secure in production
       sameSite: "None", // Required for cross-site cookie
       path: "/",
+      domain: process.env.COOKIE_DOMAIN || undefined, // Use env variable for domain
       maxAge: 3600000, // 1 hour
     });
 
@@ -107,7 +108,7 @@ exports.googleLogin = async (req, res) => {
       secure: true, // Always use secure in production
       sameSite: "None", // Required for cross-site cookie
       path: "/",
-      domain: process.env.NODE_ENV === "production" ? ".onrender.com" : undefined, // Optional: restrict to your domain
+      domain: process.env.COOKIE_DOMAIN || undefined, // Use env variable for domain
       maxAge: 3600000, // 1 hour
     });
 
@@ -177,15 +178,25 @@ exports.profile = async (req, res) => {
 
 // Logout
 exports.logout = (req, res) => {
-  // Clear the cookie with matching settings
+  // Clear the cookie with the exact same settings as when it was set
   res.clearCookie("token", {
+    httpOnly: true,
+    secure: true, // Always use secure in production
+    sameSite: "None", // Required for cross-site cookie
+    path: "/",
+    domain: process.env.COOKIE_DOMAIN || undefined, // Use env variable for domain
+  });
+
+  // Explicitly set the cookie to expire in the past as a fallback
+  res.cookie("token", "", {
     httpOnly: true,
     secure: true,
     sameSite: "None",
     path: "/",
-    domain: process.env.NODE_ENV === "production" ? ".onrender.com" : undefined,
+    domain: process.env.COOKIE_DOMAIN || undefined,
+    expires: new Date(0),
   });
-  
+
   res.status(200).json({ message: "Logged out successfully" });
 };
 
