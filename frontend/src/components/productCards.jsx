@@ -131,9 +131,17 @@ const CarCard = memo(({ product, onDelete, onRemoveFromWishlist }) => {
         const response = await axios.get(`${API_BASE_URL}/api/wishlist`, {
           withCredentials: true
         });
-        const isProductInWishlist = response.data.some(item => 
-          (item.productId._id === product._id) || (item.productId === product._id)
-        );
+        const isProductInWishlist = response.data.some(item => {
+          if (!item.productId) {
+            return false;
+          }
+          // Handle both populated and non-populated productId
+          if (typeof item.productId === 'object' && item.productId._id) {
+            return item.productId._id === product._id;
+          }
+          // Handle non-populated productId (just the ID string)
+          return item.productId === product._id;
+        });
         setIsInWishlist(isProductInWishlist);
       } catch (error) {
         console.error('Error checking wishlist status:', error);

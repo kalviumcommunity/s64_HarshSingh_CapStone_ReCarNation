@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import axiosInstance from '@/lib/axios';
 import { Link, useNavigate } from 'react-router-dom';
-import { Car, Calendar, MapPin, DollarSign, Package, User } from 'lucide-react';
+import { Car, Calendar, MapPin, DollarSign, Package, User, X } from 'lucide-react';
 
 const OrdersPage = () => {
   const { user, loading: authLoading } = useAuth();
@@ -78,6 +78,32 @@ const OrdersPage = () => {
     } catch (error) {
       console.error('Payment error:', error);
       alert('Payment failed. Please try again.');
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    try {
+      const confirmed = window.confirm('Are you sure you want to cancel this order? This action cannot be undone.');
+      
+      if (confirmed) {
+        const response = await axiosInstance.put(`/api/orders/${orderId}/cancel`, {
+          status: 'cancelled'
+        });
+        
+        if (response.data) {
+          // Refresh orders to show updated status
+          const updatedOrders = orders.map(order => 
+            order._id === orderId 
+              ? { ...order, status: 'cancelled', paymentStatus: 'cancelled' }
+              : order
+          );
+          setOrders(updatedOrders);
+          alert('Order cancelled successfully!');
+        }
+      }
+    } catch (error) {
+      console.error('Cancel order error:', error);
+      alert('Failed to cancel order. Please try again.');
     }
   };
 
@@ -168,13 +194,22 @@ const OrdersPage = () => {
                       </div>
                     </div>
                     <div className="mt-4 flex justify-between items-center">
-                      <div>
+                      <div className="flex gap-3">
                         {order.paymentStatus === 'pending' && (
                           <button
                             onClick={() => handlePayNow(order._id, order.price)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium mr-3"
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
                           >
                             Pay Now - ₹{order.price?.toLocaleString()}
+                          </button>
+                        )}
+                        {(order.status !== 'cancelled' && order.status !== 'completed') && (
+                          <button
+                            onClick={() => handleCancelOrder(order._id)}
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                          >
+                            <X className="h-4 w-4" />
+                            Cancel Order
                           </button>
                         )}
                       </div>
