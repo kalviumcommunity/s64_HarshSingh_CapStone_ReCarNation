@@ -43,6 +43,7 @@ const productRoutes = require('./features/products/productsRoutes');
 const wishlistRoutes = require('./features/wishlist/wishlistRoutes');
 const verificationRoutes = require('./features/auth/verificationRoutes');
 const ordersRoutes = require('./features/orders/ordersRoutes');
+const paymentRoutes = require('./features/payments/paymentRoutes');
 const PORT = process.env.PORT || 3001;
 connectDB();
 
@@ -51,6 +52,7 @@ app.use('/api/verify', verificationRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', ordersRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/uploads', express.static('uploads'));
 
 app.get("/", (req, res)=>{

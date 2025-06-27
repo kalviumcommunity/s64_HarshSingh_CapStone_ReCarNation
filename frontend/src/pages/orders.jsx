@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import axiosInstance from '@/lib/axios';
 import { Link, useNavigate } from 'react-router-dom';
-import { Car, Calendar, MapPin, DollarSign, Package, User, X } from 'lucide-react';
+import { Car, Calendar, MapPin, DollarSign, Package, User, X, CreditCard } from 'lucide-react';
 
 const OrdersPage = () => {
   const { user, loading: authLoading } = useAuth();
@@ -51,34 +51,11 @@ const OrdersPage = () => {
     }
   };
 
-  const handlePayNow = async (orderId, amount) => {
-    try {
-      // You can implement different payment methods here
-      // For now, let's show a simple confirmation
-      const confirmed = window.confirm(`Pay ₹${amount?.toLocaleString()} for this order?`);
-      
-      if (confirmed) {
-        // Here you would typically integrate with a payment gateway
-        // For now, let's update the payment status to completed
-        const response = await axiosInstance.put(`/api/orders/${orderId}/payment`, {
-          paymentStatus: 'completed'
-        });
-        
-        if (response.data) {
-          // Refresh orders to show updated status
-          const updatedOrders = orders.map(order => 
-            order._id === orderId 
-              ? { ...order, paymentStatus: 'completed' }
-              : order
-          );
-          setOrders(updatedOrders);
-          alert('Payment successful!');
-        }
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      alert('Payment failed. Please try again.');
-    }
+  const handlePayNow = (order) => {
+    // Navigate to payment page with order details
+    navigate(`/payment/${order._id}`, {
+      state: { order }
+    });
   };
 
   const handleCancelOrder = async (orderId) => {
@@ -197,9 +174,10 @@ const OrdersPage = () => {
                       <div className="flex gap-3">
                         {order.paymentStatus === 'pending' && (
                           <button
-                            onClick={() => handlePayNow(order._id, order.price)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+                            onClick={() => handlePayNow(order)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
                           >
+                            <CreditCard className="h-4 w-4" />
                             Pay Now - ₹{order.price?.toLocaleString()}
                           </button>
                         )}

@@ -17,6 +17,7 @@ import Wishlist from '@/pages/Wishlist';
 import CarDetails from '@/pages/carDetails';
 import ProductCars from '@/pages/productCars';
 import OrderConfirmation from '@/pages/OrderConfirmation';
+import PaymentPage from '@/pages/payment';
 import ProfileSettings from '@/pages/profilePages/profileSettings';
 import Consent from '@/pages/profilePages/concent';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -48,6 +49,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout><OrderConfirmation /></Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Payment Route - Protected */}
+          <Route
+            path="/payment/:orderId"
+            element={
+              <ProtectedRoute>
+                <Layout><PaymentPage /></Layout>
               </ProtectedRoute>
             }
           />
