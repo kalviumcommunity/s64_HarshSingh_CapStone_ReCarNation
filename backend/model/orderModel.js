@@ -45,6 +45,25 @@ const orderSchema = new mongoose.Schema({
   },
   notes: {
     type: String
+  },
+  // Razorpay payment fields
+  razorpayOrderId: {
+    type: String
+  },
+  razorpayPaymentId: {
+    type: String
+  },
+  razorpaySignature: {
+    type: String
+  },
+  paidAt: {
+    type: Date
+  },
+  refundId: {
+    type: String
+  },
+  refundedAt: {
+    type: Date
   }
 }, {
   timestamps: true
