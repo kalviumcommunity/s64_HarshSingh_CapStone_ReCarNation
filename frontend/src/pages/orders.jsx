@@ -63,24 +63,46 @@ const OrdersPage = () => {
       const confirmed = window.confirm('Are you sure you want to cancel this order? This action cannot be undone.');
       
       if (confirmed) {
-        const response = await axiosInstance.put(`/api/orders/${orderId}/cancel`, {
-          status: 'cancelled'
-        });
+        console.log('Cancelling order with ID:', orderId);
+        
+        // Send PUT request without body - backend handles everything
+        const response = await axiosInstance.put(`/api/orders/${orderId}/cancel`);
+        
+        console.log('Cancel order response:', response.data);
         
         if (response.data) {
-          // Refresh orders to show updated status
+          // Update the specific order with the response data
           const updatedOrders = orders.map(order => 
             order._id === orderId 
               ? { ...order, status: 'cancelled', paymentStatus: 'cancelled' }
               : order
           );
           setOrders(updatedOrders);
-          alert('Order cancelled successfully!');
+          
+          // Show success message
+          if (response.data.message) {
+            alert(response.data.message);
+          } else {
+            alert('Order cancelled successfully!');
+          }
         }
       }
     } catch (error) {
       console.error('Cancel order error:', error);
-      alert('Failed to cancel order. Please try again.');
+      
+      // More detailed error handling
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          error.message ||
+                          'Failed to cancel order. Please try again.';
+      
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: errorMessage
+      });
+      
+      alert(`Error: ${errorMessage}`);
     }
   };
 

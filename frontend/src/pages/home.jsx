@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Car, ArrowRight, SearchIcon, ThumbsUp, Shield, DollarSign, Award, ChevronRight, Heart, MapPin, Calendar, Fuel, BarChart3 } from "lucide-react";
 import axios from "axios";
 import { CarCard } from "@/components/productCards";
@@ -8,9 +8,28 @@ import { CarCard } from "@/components/productCards";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [featuredCars, setFeaturedCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Search form state
+  const [searchForm, setSearchForm] = useState({
+    make: '',
+    model: '',
+    maxPrice: ''
+  });
+
+  // Car makes and their corresponding models
+  const carData = {
+    toyota: ['Innova', 'Fortuner', 'Corolla', 'Camry', 'Prius', 'Etios'],
+    honda: ['City', 'Civic', 'Accord', 'CR-V', 'Jazz', 'Amaze'],
+    ford: ['EcoSport', 'Endeavour', 'Figo', 'Aspire', 'Mustang'],
+    maruti: ['Swift', 'Baleno', 'Dzire', 'Alto', 'Vitara Brezza', 'Ertiga', 'Ciaz'],
+    hyundai: ['i20', 'Creta', 'Verna', 'Elantra', 'Tucson', 'Santro', 'Grand i10'],
+    tata: ['Nexon', 'Harrier', 'Safari', 'Altroz', 'Tiago', 'Tigor'],
+    mahindra: ['Scorpio', 'XUV500', 'XUV300', 'Bolero', 'Thar', 'KUV100']
+  };
 
   useEffect(() => {
     const fetchCars = async () => {
@@ -61,6 +80,47 @@ const HomePage = () => {
     fetchCars();
   }, []);
 
+  // Handle form input changes
+  const handleInputChange = (field, value) => {
+    setSearchForm(prev => {
+      const newForm = { ...prev, [field]: value };
+      // Reset model when make changes
+      if (field === 'make') {
+        newForm.model = '';
+      }
+      return newForm;
+    });
+  };
+
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault();
+    
+    // Build search parameters
+    const searchParams = new URLSearchParams();
+    
+    if (searchForm.make) {
+      searchParams.append('make', searchForm.make);
+    }
+    if (searchForm.model) {
+      searchParams.append('model', searchForm.model);
+    }
+    if (searchForm.maxPrice) {
+      searchParams.append('maxPrice', searchForm.maxPrice);
+    }
+    
+    // Navigate to browse page with search parameters
+    navigate(`/browse?${searchParams.toString()}`);
+  };
+
+  // Get available models based on selected make
+  const getAvailableModels = () => {
+    if (!searchForm.make || !carData[searchForm.make]) {
+      return [];
+    }
+    return carData[searchForm.make];
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow">
@@ -87,8 +147,12 @@ const HomePage = () => {
               </p>
               
               <div className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <select className="border border-gray-200 rounded-lg p-2.5 flex-grow focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all duration-200 text-gray-600">
+                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+                  <select 
+                    value={searchForm.make}
+                    onChange={(e) => handleInputChange('make', e.target.value)}
+                    className="border border-gray-200 rounded-lg p-2.5 flex-grow focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all duration-200 text-gray-600"
+                  >
                     <option value="">All Makes</option>
                     <option value="toyota">Toyota</option>
                     <option value="honda">Honda</option>
@@ -99,32 +163,47 @@ const HomePage = () => {
                     <option value="mahindra">Mahindra</option>
                   </select>
                   
-                  <select className="border border-gray-200 rounded-lg p-2.5 flex-grow focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all duration-200 text-gray-600">
-                    <option value="">All Models</option>
-                    <option value="swift">Swift</option>
-                    <option value="i20">i20</option>
-                    <option value="city">City</option>
-                    <option value="innova">Innova</option>
-                    <option value="nexon">Nexon</option>
-                    <option value="scorpio">Scorpio</option>
+                  <select 
+                    value={searchForm.model}
+                    onChange={(e) => handleInputChange('model', e.target.value)}
+                    disabled={!searchForm.make}
+                    className="border border-gray-200 rounded-lg p-2.5 flex-grow focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all duration-200 text-gray-600 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {!searchForm.make ? 'Select Make First' : 'All Models'}
+                    </option>
+                    {getAvailableModels().map((model) => (
+                      <option key={model.toLowerCase()} value={model.toLowerCase()}>
+                        {model}
+                      </option>
+                    ))}
                   </select>
                   
-                  <select className="border border-gray-200 rounded-lg p-2.5 flex-grow focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all duration-200 text-gray-600">
+                  <select 
+                    value={searchForm.maxPrice}
+                    onChange={(e) => handleInputChange('maxPrice', e.target.value)}
+                    className="border border-gray-200 rounded-lg p-2.5 flex-grow focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all duration-200 text-gray-600"
+                  >
                     <option value="">Max Price</option>
                     <option value="500000">₹5 Lakh</option>
                     <option value="1000000">₹10 Lakh</option>
                     <option value="1500000">₹15 Lakh</option>
                     <option value="2000000">₹20 Lakh</option>
                     <option value="3000000">₹30 Lakh</option>
+                    <option value="5000000">₹50 Lakh</option>
                   </select>
                   
-                  <Button className="bg-orange-600 hover:bg-orange-500 text-white">                   <SearchIcon className="h-4 w-4 mr-2" />
+                  <Button 
+                    type="submit" 
+                    className="bg-orange-600 hover:bg-orange-500 text-white whitespace-nowrap"
+                  >
+                    <SearchIcon className="h-4 w-4 mr-2" />
                     Search
                   </Button>
-                </div>
+                </form>
                 
                 <div className="mt-4 flex justify-between items-center text-sm">
-                  <Link to="/browse" className="text-brand-blue hover:text-brand-lightBlue flex items-center transition-colors duration-200">
+                  <Link to="/browse" className="text-blue-950 hover:text-blue-900 flex items-center transition-colors duration-200">
                     Advanced Search
                     <ArrowRight className="ml-1 h-3.5 w-3.5" />
                   </Link>
@@ -140,14 +219,14 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900">Featured Cars</h2>
-              <Link to="/browse" className="text-brand-orange hover:text-brand-lightOrange flex items-center">
+              <Link to="/browse" className="text-orange-600 hover:text-orange-500 flex items-center">
                 View All <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
 
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-orange"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-600"></div>
               </div>
             ) : error ? (
               <div className="text-center py-8">
@@ -202,7 +281,7 @@ const HomePage = () => {
         <section className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-brand-blue mb-4">How It Works</h2>
+              <h2 className="text-3xl font-bold text-blue-950 mb-4">How It Works</h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
                 ReCarNation makes buying and selling cars simple with our easy-to-follow process.
               </p>
@@ -210,10 +289,10 @@ const HomePage = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
-                <div className="bg-brand-orange text-white rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
+                <div className="bg-orange-600 text-white rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold">1</span>
                 </div>
-                <h3 className="text-xl font-semibold text-brand-blue mb-2">
+                <h3 className="text-xl font-semibold text-blue-950 mb-2">
                   Browse Listings
                 </h3>
                 <p className="text-gray-600">
@@ -222,10 +301,10 @@ const HomePage = () => {
               </div>
               
               <div className="text-center">
-                <div className="bg-brand-orange text-white rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
+                <div className="bg-orange-600 text-white rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold">2</span>
                 </div>
-                <h3 className="text-xl font-semibold text-brand-blue mb-2">
+                <h3 className="text-xl font-semibold text-blue-950 mb-2">
                   Contact Sellers
                 </h3>
                 <p className="text-gray-600">
@@ -234,10 +313,10 @@ const HomePage = () => {
               </div>
               
               <div className="text-center">
-                <div className="bg-brand-orange text-white rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
+                <div className="bg-orange-600 text-white rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold">3</span>
                 </div>
-                <h3 className="text-xl font-semibold text-brand-blue mb-2">
+                <h3 className="text-xl font-semibold text-blue-950 mb-2">
                   Close the Deal
                 </h3>
                 <p className="text-gray-600">
@@ -317,7 +396,7 @@ const HomePage = () => {
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-2">
                 <div className="p-8 md:p-12">
-                  <h2 className="text-3xl font-bold text-brand-blue mb-4">Ready to Buy or Sell a Car?</h2>
+                  <h2 className="text-3xl font-bold text-blue-950 mb-4">Ready to Buy or Sell a Car?</h2>
                   <p className="text-lg text-gray-600 mb-6">
                     Join thousands of satisfied users who have successfully bought or sold vehicles on ReCarNation. 
                     Our platform is designed to make the process simple, secure, and stress-free.
@@ -350,22 +429,22 @@ const HomePage = () => {
 // Why Choose Us Features
 const whyChooseUsFeatures = [
   {
-    icon: <Shield className="h-12 w-12 text-brand-orange" />,
+    icon: <Shield className="h-12 w-12 text-orange-600" />,
     title: "Verified Sellers",
     description: "All our sellers go through a rigorous verification process to ensure legitimacy and trustworthiness."
   },
   {
-    icon: <ThumbsUp className="h-12 w-12 text-brand-orange" />,
+    icon: <ThumbsUp className="h-12 w-12 text-orange-600" />,
     title: "Quality Assurance",
     description: "Each listed vehicle undergoes an inspection process to ensure that you get what you pay for."
   },
   {
-    icon: <DollarSign className="h-12 w-12 text-brand-orange" />,
+    icon: <DollarSign className="h-12 w-12 text-orange-600" />,
     title: "Competitive Pricing",
     description: "Compare prices from multiple sellers to ensure you get the best deal on your next vehicle."
   },
   {
-    icon: <Award className="h-12 w-12 text-brand-orange" />,
+    icon: <Award className="h-12 w-12 text-orange-600" />,
     title: "Dedicated Support",
     description: "Our customer support team is available to assist you through every step of the buying process."
   }
