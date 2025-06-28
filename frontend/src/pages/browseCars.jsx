@@ -3,11 +3,12 @@ import { CarCard } from '@/components/productCards';
 import FilterSidebar from '@/components/filter';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 
 const BrowseCarPage = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
