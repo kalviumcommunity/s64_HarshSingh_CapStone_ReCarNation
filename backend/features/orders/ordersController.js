@@ -70,3 +70,42 @@ exports.updatePaymentStatus = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Cancel an order
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    // Find the order and make sure it belongs to the current user (buyer)
+    const order = await Order.findOne({ _id: orderId, buyer: req.user._id });
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Check if order can be cancelled (only pending or processing orders can be cancelled)
+    if (order.status === 'completed' || order.status === 'cancelled') {
+      return res.status(400).json({ 
+        message: `Cannot cancel order with status: ${order.status}` 
+      });
+    }
+    
+    // Update order status to cancelled
+    order.status = 'cancelled';
+    order.paymentStatus = 'cancelled';
+    
+    await order.save();
+    
+    // Return updated order with populated fields
+    const updatedOrder = await Order.findById(orderId)
+      .populate('product')
+      .populate('seller', 'name email');
+    
+    res.json({ 
+      message: 'Order cancelled successfully', 
+      order: updatedOrder 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

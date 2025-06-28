@@ -43,15 +43,21 @@ exports.login = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    // Updated cookie settings for cross-origin support in production
-    res.cookie("token", token, {
+    // Create cookie options
+    const cookieOptions = {
       httpOnly: true,
-      secure: true, // Always use secure in production
-      sameSite: "None", // Required for cross-site cookie
+      secure: process.env.NODE_ENV === 'production', // Only secure in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: "/",
-      domain: process.env.COOKIE_DOMAIN || undefined, // Use env variable for domain
       maxAge: 3600000, // 1 hour
-    });
+    };
+
+    // Only add domain if it's set and not empty
+    if (process.env.COOKIE_DOMAIN && process.env.COOKIE_DOMAIN.trim() !== '') {
+      cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+
+    res.cookie("token", token, cookieOptions);
 
     res.json({
       message: "Logged in successfully",
@@ -102,15 +108,21 @@ exports.googleLogin = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    // Updated cookie settings for cross-origin support in production
-    res.cookie("token", token, {
+    // Create cookie options
+    const cookieOptions = {
       httpOnly: true,
-      secure: true, // Always use secure in production
-      sameSite: "None", // Required for cross-site cookie
+      secure: process.env.NODE_ENV === 'production', // Only secure in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: "/",
-      domain: process.env.COOKIE_DOMAIN || undefined, // Use env variable for domain
       maxAge: 3600000, // 1 hour
-    });
+    };
+
+    // Only add domain if it's set and not empty
+    if (process.env.COOKIE_DOMAIN && process.env.COOKIE_DOMAIN.trim() !== '') {
+      cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+
+    res.cookie("token", token, cookieOptions);
 
     res.json({
       message: "Logged in with Google successfully",
@@ -178,22 +190,25 @@ exports.profile = async (req, res) => {
 
 // Logout
 exports.logout = (req, res) => {
-  // Clear the cookie with the exact same settings as when it was set
-  res.clearCookie("token", {
+  // Create cookie options
+  const cookieOptions = {
     httpOnly: true,
-    secure: true, // Always use secure in production
-    sameSite: "None", // Required for cross-site cookie
+    secure: process.env.NODE_ENV === 'production', // Only secure in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     path: "/",
-    domain: process.env.COOKIE_DOMAIN || undefined, // Use env variable for domain
-  });
+  };
+
+  // Only add domain if it's set and not empty
+  if (process.env.COOKIE_DOMAIN && process.env.COOKIE_DOMAIN.trim() !== '') {
+    cookieOptions.domain = process.env.COOKIE_DOMAIN;
+  }
+
+  // Clear the cookie with the exact same settings as when it was set
+  res.clearCookie("token", cookieOptions);
 
   // Explicitly set the cookie to expire in the past as a fallback
   res.cookie("token", "", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    path: "/",
-    domain: process.env.COOKIE_DOMAIN || undefined,
+    ...cookieOptions,
     expires: new Date(0),
   });
 
