@@ -10,11 +10,10 @@ ReCarNation is a web-based used car marketplace designed to facilitate seamless 
 ### 🚀 **ReCarNation – Key Features**
 
 - **User Auth**: Email/password login, Google OAuth, JWT, role-based access (Admin, Buyer, Seller)  
-- **Car Listings**: Sellers can add, edit, delete listings with images and full car details  
-- **Search & Filters**: Find cars by type, price, year, and keywords  
-- **Messaging**: Real-time chat between buyers and sellers via Socket.io  
-- **Reviews**: Buyer ratings and reviews on seller profiles  
-- **Admin Panel**: Manage users and listings  
+- **Car Listings**: Sellers can add, edit, delete listings with images and full car details.
+- **Search & Filters**: Find cars by type, price, year, and keywords. 
+- **Admin Panel**: Manage users and listings.
+- **Payment Integration**: Using razorpay for the payment integration.  
 - **API-Driven**: Full CRUD APIs for listings, users, messages, and reviews  
 - **Responsive UI**: Mobile-friendly design, deployed on Vercel & Render, Docker-supported
 
@@ -24,11 +23,12 @@ ReCarNation is a web-based used car marketplace designed to facilitate seamless 
 
 | **Component**       | **Technology Used**                                |
 |---------------------|----------------------------------------------------|
-| **Frontend**        | React, TailwindCSS, Multer (file upload), Socket.io |
-| **Backend**         | Node.js, Express.js, Multer, Socket.io             |
+| **Frontend**        | React, TailwindCSS, Multer + cloudinary(file upload) |
+| **Backend**         | Node.js, Express.js, Multer + cloudinary           |
 | **Database**        | MongoDB (Mongoose) / PostgreSQL                    |
 | **Authentication**  | JWT, Google OAuth                                  |
 | **Deployment**      | Vercel/Netlify (Frontend), Render/Heroku (Backend) |
+| **Payment Gateway** | Razorpay                                           |
 | **Containerization**| Docker (local & cloud deployment)                  |
 | **Version Control** | GitHub (issues, milestones, PR tracking)           |
 
