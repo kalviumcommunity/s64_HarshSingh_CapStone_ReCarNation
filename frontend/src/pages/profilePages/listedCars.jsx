@@ -66,26 +66,28 @@ const ManageCarsPage = () => {
   
   // Fetch all cars on component mount
   useEffect(() => {
-    fetchCars();
-  }, []);
+    if (user) {
+      fetchCars();
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
   
   const fetchCars = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await axios.get(API_URL, {
-        withCredentials: true,
-        params: {
-          seller: user._id
-        }
+      const response = await axios.get(`${API_URL}/mine`, {
+        withCredentials: true
       });
       
-      setCarListings(response.data);
+      // Ensure we always set an array, even if the response is empty or undefined
+      setCarListings(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch cars:", err);
       setError("Failed to load car listings. Please try again later.");
       toast.error("Failed to load car listings");
+      // Set empty array on error to prevent map function issues
+      setCarListings([]);
     } finally {
       setIsLoading(false);
     }
@@ -143,11 +145,15 @@ const ManageCarsPage = () => {
       const savedCar = response.data;
       
       if (isNewCar) {
-        setCarListings([...carListings, savedCar]);
+        setCarListings(prevListings => 
+          Array.isArray(prevListings) ? [...prevListings, savedCar] : [savedCar]
+        );
         toast.success("New car listing added successfully");
       } else {
-        setCarListings(
-          carListings.map(car => car._id === savedCar._id ? savedCar : car)
+        setCarListings(prevListings => 
+          Array.isArray(prevListings) 
+            ? prevListings.map(car => car._id === savedCar._id ? savedCar : car)
+            : [savedCar]
         );
         toast.success("Car listing updated successfully");
       }
@@ -170,8 +176,10 @@ const ManageCarsPage = () => {
         withCredentials: true
       });
       
-      setCarListings(
-        carListings.filter(car => car._id !== currentCar._id)
+      setCarListings(prevListings => 
+        Array.isArray(prevListings) 
+          ? prevListings.filter(car => car._id !== currentCar._id)
+          : []
       );
       toast.success("Car listing deleted successfully");
       setIsDeleteDialogOpen(false);
@@ -230,9 +238,11 @@ const ManageCarsPage = () => {
       
       const updatedCar = response.data;
       setCurrentCar(updatedCar);
-      setCarListings(carListings.map(car => 
-        car._id === updatedCar._id ? updatedCar : car
-      ));
+      setCarListings(prevListings => 
+        Array.isArray(prevListings) 
+          ? prevListings.map(car => car._id === updatedCar._id ? updatedCar : car)
+          : [updatedCar]
+      );
       toast.success('Images uploaded successfully');
     } catch (err) {
       console.error('Failed to upload images:', err);
@@ -255,9 +265,11 @@ const ManageCarsPage = () => {
       
       const updatedCar = response.data;
       setCurrentCar(updatedCar);
-      setCarListings(carListings.map(car => 
-        car._id === updatedCar._id ? updatedCar : car
-      ));
+      setCarListings(prevListings => 
+        Array.isArray(prevListings) 
+          ? prevListings.map(car => car._id === updatedCar._id ? updatedCar : car)
+          : [updatedCar]
+      );
       toast.success('Image removed successfully');
     } catch (err) {
       console.error('Failed to remove image:', err);
@@ -319,7 +331,7 @@ const ManageCarsPage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {carListings.map(car => (
+              {Array.isArray(carListings) && carListings.map(car => (
                 <Card key={car._id} className="overflow-hidden border border-gray-100 hover:shadow-md transition-shadow duration-300">
                   <div className="flex flex-col sm:flex-row">
                     <div className="w-full sm:w-1/3 h-48 sm:h-auto">

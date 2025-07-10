@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import axios from '@/lib/axios';
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+// Firebase imports removed - using backend verification instead
 import {
   Dialog,
   DialogContent,
@@ -24,21 +23,7 @@ const ConsentContent = () => {
   const [contact, setContact] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [verificationStep, setVerificationStep] = useState('input');
-  const [verificationId, setVerificationId] = useState(null);
-  const [confirmationResult, setConfirmationResult] = useState(null);
-
-  useEffect(() => {
-    // Initialize reCAPTCHA when component mounts
-    if (!window.recaptchaVerifier) {
-      const auth = getAuth(app);
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
-      });
-    }
-  }, []);
+  // Removed Firebase verification states and useEffect
 
   const handleRoleChange = async (newRole) => {
     if (currentRole === newRole) return;
@@ -62,7 +47,6 @@ const ConsentContent = () => {
     setVerificationStep('input');
     setContact('');
     setVerificationCode('');
-    setConfirmationResult(null);
   };
 
   const handleSendVerification = async () => {
@@ -70,16 +54,17 @@ const ConsentContent = () => {
       setIsLoading(true);
       
       if (verificationDialog.type === 'phone') {
-        const auth = getAuth(app);
-        const formattedPhoneNumber = contact.startsWith('+') ? contact : `+${contact}`;
-        const confirmation = await signInWithPhoneNumber(
-          auth, 
-          formattedPhoneNumber,
-          window.recaptchaVerifier
-        );
-        setConfirmationResult(confirmation);
-        setVerificationStep('verify');
-        toast.success('Verification code sent successfully');
+        // Send OTP via backend (you can implement SMS service here)
+        const response = await axios.post('/api/verify/phone', {
+          phone: contact,
+        }, {
+          withCredentials: true
+        });
+
+        if (response.data.success) {
+          setVerificationStep('verify');
+          toast.success('Verification code sent successfully');
+        }
       } else {
         // Handle email verification
         const response = await axios.post('/api/verify/email', {
@@ -106,28 +91,35 @@ const ConsentContent = () => {
       setIsLoading(true);
 
       if (verificationDialog.type === 'phone') {
-        // Verify phone OTP using Firebase
-        await confirmationResult.confirm(verificationCode);
-        
-        // Update backend about successful verification
-        await axios.post('/verify', {
-          type: 'phone',
+        // Verify phone OTP via backend
+        const response = await axios.post('/api/verify/phone/confirm', {
+          code: verificationCode,
           phone: contact
         }, {
           withCredentials: true
         });
 
-        // Refresh user profile
-        const { data: profileData } = await axios.get('/auth/me', {
-          withCredentials: true
-        });
+        if (response.data.success) {
+          // Update backend about successful verification
+          await axios.post('/verify', {
+            type: 'phone',
+            phone: contact
+          }, {
+            withCredentials: true
+          });
 
-        if (profileData.user) {
-          login(profileData.user);
+          // Refresh user profile
+          const { data: profileData } = await axios.get('/auth/me', {
+            withCredentials: true
+          });
+
+          if (profileData.user) {
+            login(profileData.user);
+          }
+
+          toast.success('Phone number verified successfully');
+          setVerificationDialog({ open: false, type: null });
         }
-
-        toast.success('Phone number verified successfully');
-        setVerificationDialog({ open: false, type: null });
       } else {
         // Handle email verification code
         const response = await axios.post('/api/verify/email/confirm', {
@@ -223,8 +215,7 @@ const ConsentContent = () => {
         </div>
       </div>
 
-      {/* Hidden reCAPTCHA container */}
-      <div id="recaptcha-container"></div>
+      {/* reCAPTCHA container removed - no longer using Firebase */}
 
       {/* Verification Dialog */}
       <Dialog 

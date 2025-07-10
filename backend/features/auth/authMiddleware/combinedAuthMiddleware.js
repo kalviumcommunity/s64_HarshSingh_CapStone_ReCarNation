@@ -1,40 +1,33 @@
 const jwt = require("jsonwebtoken");
 const User = require("../../../model/userModel");
-const admin = require('../../../config/firebase');
 const { getCookieConfig } = require('../../../config/cookieConfig');
 
 exports.authenticate = async (req, res, next) => {
-  console.log('🔒 COMBINED AUTH MIDDLEWARE CALLED');
+  console.log('🔒 JWT AUTH MIDDLEWARE CALLED');
   console.log('Headers:', req.headers.authorization ? 'Bearer token present' : 'No bearer token');
   console.log('Cookies:', req.cookies.token ? 'JWT cookie present' : 'No JWT cookie');
   
   try {
-    // First try Firebase token
+    // First try Bearer token (JWT)
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const idToken = authHeader.split('Bearer ')[1];
+      const token = authHeader.split('Bearer ')[1];
       try {
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        const user = await User.findOne({ firebaseUid: decodedToken.uid });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select('-password');
         
         if (user) {
-          // Generate new JWT and set cookie
-          const token = jwt.sign(
-            { id: user._id, email: user.email, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-          );
+          // Set cookie for future requests
           res.cookie('token', token, getCookieConfig());
-          
           req.user = user;
           return next();
         }
       } catch (error) {
-        console.log('Firebase token verification failed, trying JWT cookie');
+        console.log('Bearer token verification failed, trying JWT cookie');
       }
     }
 
-    // Try JWT cookie if Firebase token fails
+    // Try JWT cookie if Bearer token fails
     const token = req.cookies.token;
     if (token) {
       try {
