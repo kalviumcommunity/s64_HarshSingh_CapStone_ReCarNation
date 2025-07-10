@@ -14,14 +14,20 @@ exports.createOrder = async (req, res) => {
       buyer,
       seller: product.listedBy?._id || product.listedBy,
       product: productId,
-      price: product.price,
+      price: product.price + 7500, // Add processing fee (5000) and documentation fee (2500)
       paymentStatus: paymentStatus || 'pending',
       paymentMethod: paymentMethod || 'cash',
       meetingLocation: address,
       meetingDate: new Date(), // default to now, can be updated later
     });
     await order.save();
-    res.status(201).json(order);
+    
+    // Return the order with populated product and seller data
+    const populatedOrder = await Order.findById(order._id)
+      .populate('product')
+      .populate('seller', 'name email');
+    
+    res.status(201).json(populatedOrder);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -34,6 +40,24 @@ exports.getUserOrders = async (req, res) => {
       .populate('product')
       .populate('seller', 'name email');
     res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Get specific order by ID
+exports.getOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findOne({ _id: orderId, buyer: req.user._id })
+      .populate('product')
+      .populate('seller', 'name email');
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    res.json(order);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

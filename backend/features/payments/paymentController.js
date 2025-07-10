@@ -13,17 +13,30 @@ exports.createOrder = async (req, res) => {
   try {
     const { amount, currency = 'INR', orderId } = req.body;
 
+    console.log('Create order request:', { amount, currency, orderId, userId: req.user?._id });
+
     // Validate required fields
     if (!amount || !orderId) {
+      console.log('Missing required fields:', { amount, orderId });
       return res.status(400).json({
         success: false,
         message: 'Amount and Order ID are required'
       });
     }
 
+    // Check if Razorpay credentials are set
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error('Razorpay credentials not configured');
+      return res.status(500).json({
+        success: false,
+        message: 'Payment system not configured'
+      });
+    }
+
     // Check if order exists and belongs to the user
     const order = await Order.findOne({ _id: orderId, buyer: req.user._id });
     if (!order) {
+      console.log('Order not found:', { orderId, userId: req.user._id });
       return res.status(404).json({
         success: false,
         message: 'Order not found'
@@ -32,24 +45,41 @@ exports.createOrder = async (req, res) => {
 
     // Check if order is already paid
     if (order.paymentStatus === 'completed') {
+      console.log('Order already paid:', { orderId, paymentStatus: order.paymentStatus });
       return res.status(400).json({
         success: false,
         message: 'Order is already paid'
       });
     }
 
+    // Check if amount exceeds Razorpay test limit (₹50,000)
+    const isTestMode = process.env.RAZORPAY_TEST_MODE === 'true' || process.env.RAZORPAY_KEY_ID.includes('test');
+    const maxTestAmount = 50000; // ₹50,000 for test mode
+    
+    let orderAmount = Math.round(amount * 100); // Convert to paisa
+    
+    if (isTestMode && amount > maxTestAmount) {
+      console.log(`Amount ${amount} exceeds test limit ${maxTestAmount}. Using test amount for demo.`);
+      orderAmount = Math.round(maxTestAmount * 100); // Use max test amount
+    }
+
     // Create Razorpay order
     const options = {
-      amount: Math.round(amount * 100), // Convert to paisa and ensure it's an integer
+      amount: orderAmount,
       currency: currency,
       receipt: `order_rcpt_${orderId}`,
       notes: {
         orderId: orderId,
-        userId: req.user._id.toString()
+        userId: req.user._id.toString(),
+        originalAmount: amount // Store original amount for reference
       }
     };
 
+    console.log('Creating Razorpay order with options:', options);
+
     const razorpayOrder = await razorpay.orders.create(options);
+
+    console.log('Razorpay order created:', razorpayOrder);
 
     // Update order with Razorpay order ID
     order.razorpayOrderId = razorpayOrder.id;
@@ -68,6 +98,11 @@ exports.createOrder = async (req, res) => {
 
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to create payment order',

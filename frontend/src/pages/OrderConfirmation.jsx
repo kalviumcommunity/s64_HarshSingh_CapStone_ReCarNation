@@ -16,6 +16,7 @@ const OrderConfirmation = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [address, setAddress] = useState('');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -69,22 +70,42 @@ const OrderConfirmation = () => {
       alert('Please enter your delivery address');
       return;
     }
+    
+    setIsPlacingOrder(true);
     try {
       const res = await axios.post(
         `${API_BASE_URL}/api/orders`,
         {
           productId: id,
           address,
-          paymentStatus: payLater ? 'pending' : 'completed',
+          paymentStatus: 'pending',
           paymentMethod: payLater ? 'cash' : 'online',
         },
         { withCredentials: true }
       );
+      
       if (res.status === 201) {
-        navigate('/orders');
+        const orderId = res.data._id;
+        console.log('Order created successfully:', res.data);
+        
+        if (payLater) {
+          // For pay later, go to orders page
+          navigate('/orders');
+        } else {
+          // For pay now, redirect to payment page
+          navigate(`/payment/${orderId}`, { 
+            state: { 
+              order: res.data,
+              returnUrl: '/orders' 
+            } 
+          });
+        }
       }
     } catch (err) {
+      console.error('Order creation error:', err);
       alert(err.response?.data?.message || 'Failed to place order');
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -304,19 +325,35 @@ const OrderConfirmation = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="space-y-4">
                 <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 text-lg"
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 text-lg"
                   onClick={() => handleOrder(false)}
-                  disabled={!address.trim()}
+                  disabled={!address.trim() || isPlacingOrder}
                 >
-                  <ShoppingCart className="h-5 w-5 mr-2" />
-                  Confirm & Pay Now
+                  {isPlacingOrder ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="h-5 w-5 mr-2" />
+                      Confirm & Pay Now
+                    </>
+                  )}
                 </Button>
                 <Button
-                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 text-lg"
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white font-semibold py-3 text-lg"
                   onClick={() => handleOrder(true)}
-                  disabled={!address.trim()}
+                  disabled={!address.trim() || isPlacingOrder}
                 >
-                  Pay Later
+                  {isPlacingOrder ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    "Pay Later"
+                  )}
                 </Button>
                 
                 <Button
@@ -329,9 +366,9 @@ const OrderConfirmation = () => {
               </div>
 
               {/* Note */}
-              <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  � Payment integration will be added soon. For now, your order details will be saved.
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  🔒 Secure payment powered by Razorpay. You'll be redirected to complete your payment safely.
                 </p>
               </div>
             </div>

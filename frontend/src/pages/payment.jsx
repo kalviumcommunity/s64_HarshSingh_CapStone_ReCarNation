@@ -46,14 +46,17 @@ const PaymentPage = () => {
 
   const createRazorpayOrder = async (amount) => {
     try {
+      console.log('Creating Razorpay order with:', { amount, orderId });
       const response = await axiosInstance.post('/api/payments/create-order', {
         amount: amount,
         currency: 'INR',
         orderId: orderId
       });
+      console.log('Razorpay order response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error creating Razorpay order:', error);
+      console.error('Error response:', error.response?.data);
       throw error;
     }
   };
@@ -80,12 +83,16 @@ const PaymentPage = () => {
       // Create Razorpay order
       const razorpayOrder = await createRazorpayOrder(order.price);
       
+      // Determine the actual payment amount (test mode limitation)
+      const isTestMode = import.meta.env.VITE_RAZORPAY_TEST_MODE === 'true';
+      const paymentAmount = isTestMode && order.price > 50000 ? 50000 : order.price;
+      
       // Initialize Razorpay payment
       await initializeRazorpayPayment({
         orderId: order._id,
-        amount: order.price,
+        amount: paymentAmount,
         description: `Payment for ${order.product?.make} ${order.product?.model}`,
-        orderRzpId: razorpayOrder.id,
+        orderRzpId: razorpayOrder.data?.id || razorpayOrder.id,
         userDetails: {
           name: user?.displayName || user?.name,
           email: user?.email,
@@ -236,6 +243,22 @@ const PaymentPage = () => {
             </div>
           </div>
 
+          {/* Test Mode Warning */}
+          {import.meta.env.VITE_RAZORPAY_TEST_MODE === 'true' && order.price > 50000 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <div className="h-6 w-6 text-yellow-600 mr-3">⚠️</div>
+                <div>
+                  <h3 className="font-medium text-yellow-800">Test Mode - Demo Payment</h3>
+                  <p className="text-sm text-yellow-700">
+                    This is a test transaction. The actual amount is {formatAmount(order.price)}, 
+                    but you'll be charged ₹50,000 for demo purposes due to Razorpay test limits.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Payment Status Info */}
           {order.paymentStatus === 'completed' && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -267,7 +290,11 @@ const PaymentPage = () => {
                 ) : (
                   <>
                     <CreditCard className="h-5 w-5" />
-                    <span>Pay {formatAmount(order.price)}</span>
+                    <span>
+                      Pay {import.meta.env.VITE_RAZORPAY_TEST_MODE === 'true' && order.price > 50000 
+                        ? '₹50,000 (Demo)' 
+                        : formatAmount(order.price)}
+                    </span>
                   </>
                 )}
               </button>
