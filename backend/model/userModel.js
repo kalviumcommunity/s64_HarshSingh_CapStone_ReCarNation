@@ -18,10 +18,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null, // If the user signed in with Google
       },
-      firebaseUid: {
-        type: String,
-        default: null, // Firebase UID for authentication
-      },
+
       password: {
         type: String,
         default: null, // If the user registered traditionally

@@ -1,6 +1,5 @@
 const User = require('../../model/userModel');
-const admin = require('../../config/firebase');
-const auth = admin.auth();
+const jwt = require('jsonwebtoken');
 
 exports.getCurrentUser = async (req, res) => {
   try {
@@ -12,9 +11,6 @@ exports.getCurrentUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    // Get Firebase user
-    const firebaseUser = await auth.getUser(user.firebaseUid);
 
     // Format name into firstName and lastName
     const nameParts = user.name ? user.name.split(' ') : ['', ''];
@@ -29,11 +25,11 @@ exports.getCurrentUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        isVerified: firebaseUser.emailVerified || !!firebaseUser.phoneNumber,
+        isVerified: user.isVerified,
         photo: user.profilePicture || "https://via.placeholder.com/32",
-        phoneNumber: user.phoneNumber,
-        verifiedWith: firebaseUser.phoneNumber ? 'phone' : (firebaseUser.emailVerified ? 'email' : null),
-        verifiedContact: firebaseUser.phoneNumber || (firebaseUser.emailVerified ? firebaseUser.email : null)
+        phoneNumber: user.phone,
+        verifiedWith: user.verifiedWith,
+        verifiedContact: user.verifiedContact
       }
     });
   } catch (error) {
@@ -44,25 +40,28 @@ exports.getCurrentUser = async (req, res) => {
 
 exports.verifyUser = async (req, res) => {
   try {
-    const { type, phone } = req.body;
+    const { type, phone, email } = req.body;
     const user = await User.findById(req.user._id);
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get Firebase user
-    const firebaseUser = await auth.getUser(user.firebaseUid);
-    
     // For phone verification, update the user's phone number
     if (type === 'phone' && phone) {
-      // Since phone verification is handled by Firebase Client SDK,
-      // we just need to update our user model with the verified phone
-      user.phoneNumber = phone;
+      user.phone = phone;
+      user.verifiedWith = 'phone';
+      user.verifiedContact = phone;
     }
 
-    // Update verification status based on Firebase
-    user.isVerified = firebaseUser.emailVerified || !!firebaseUser.phoneNumber;
+    // For email verification
+    if (type === 'email' && email) {
+      user.verifiedWith = 'email';
+      user.verifiedContact = email;
+    }
+
+    // Update verification status
+    user.isVerified = true;
     await user.save();
 
     res.json({
@@ -70,11 +69,11 @@ exports.verifyUser = async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        phoneNumber: user.phoneNumber,
+        phoneNumber: user.phone,
         role: user.role,
         isVerified: user.isVerified,
-        verifiedWith: firebaseUser.phoneNumber ? 'phone' : (firebaseUser.emailVerified ? 'email' : null),
-        verifiedContact: firebaseUser.phoneNumber || (firebaseUser.emailVerified ? firebaseUser.email : null)
+        verifiedWith: user.verifiedWith,
+        verifiedContact: user.verifiedContact
       }
     });
   } catch (error) {
@@ -99,22 +98,9 @@ exports.startEmailVerification = async (req, res) => {
       return res.status(400).json({ message: 'User is already verified' });
     }
 
-    // Get Firebase user
-    const firebaseUser = await auth.getUser(user.firebaseUid);
-
-    // Generate email verification link
-    const actionCodeSettings = {
-      url: `${process.env.FRONTEND_URL}/verify-email`,
-      handleCodeInApp: true
-    };
-
-    const link = await auth.generateEmailVerificationLink(
-      firebaseUser.email, 
-      actionCodeSettings
-    );
-
-    // TODO: Send this link via email using your email service
-    console.log('Email verification link:', link);
+    // TODO: Implement email verification logic (send OTP, etc.)
+    // For now, we'll just return success
+    console.log('Email verification requested for:', email);
 
     res.json({ 
       success: true, 
@@ -137,25 +123,15 @@ exports.checkVerificationStatus = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get Firebase user status
-    const firebaseUser = await auth.getUser(user.firebaseUid);
-
-    // Update MongoDB user verification status and phone if verified
-    user.isVerified = firebaseUser.emailVerified || !!firebaseUser.phoneNumber;
-    if (firebaseUser.phoneNumber && !user.phoneNumber) {
-      user.phoneNumber = firebaseUser.phoneNumber;
-    }
-    await user.save();
-
     res.json({
       success: true,
       isVerified: user.isVerified,
-      emailVerified: firebaseUser.emailVerified,
-      phoneVerified: !!firebaseUser.phoneNumber,
-      email: firebaseUser.email,
-      phone: firebaseUser.phoneNumber,
-      verifiedWith: firebaseUser.phoneNumber ? 'phone' : (firebaseUser.emailVerified ? 'email' : null),
-      verifiedContact: firebaseUser.phoneNumber || (firebaseUser.emailVerified ? firebaseUser.email : null)
+      emailVerified: user.verifiedWith === 'email',
+      phoneVerified: user.verifiedWith === 'phone',
+      email: user.email,
+      phone: user.phone,
+      verifiedWith: user.verifiedWith,
+      verifiedContact: user.verifiedContact
     });
   } catch (error) {
     console.error('Verification status check error:', error);

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { auth } from './firebase';
 
 const isDevelopment = import.meta.env.MODE !== 'production';
 const baseURL = import.meta.env.VITE_API_BASE_URL;
@@ -18,15 +17,8 @@ const axiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   async (config) => {
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        const token = await user.getIdToken();
-        config.headers.Authorization = `Bearer ${token}`;
-      } catch (error) {
-        console.error('Error getting auth token:', error);
-      }
-    }
+    // JWT token will be sent automatically via cookies
+    // No need for manual token handling since we're using withCredentials: true
     return config;
   },
   (error) => {
@@ -50,24 +42,12 @@ axiosInstance.interceptors.response.use(
       data: error.response?.data
     });
     
-    const originalRequest = error.config;
-
-    // If the error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          // Force token refresh
-          const token = await user.getIdToken(true);
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return axiosInstance(originalRequest);
-        }
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-      }
+    // Handle 401 errors - redirect to login if needed
+    if (error.response?.status === 401) {
+      // You can add logout logic here if needed
+      console.log('Authentication required');
     }
+    
     return Promise.reject(error);
   }
 );
