@@ -4,13 +4,15 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - MONGODB_URI=mongodb://mongo:27017/recarnation
     volumes:
+      - ./backend:/app
+      - /app/node_modules
       - ./backend/uploads:/app/uploads
     depends_on:
       mongo:
@@ -18,31 +20,23 @@ services:
     restart: unless-stopped
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
-      - "80:80"
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     restart: unless-stopped
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   mongo:
     image: mongo:7.0-jammy
@@ -51,7 +45,7 @@ services:
     environment:
       - MONGO_INITDB_DATABASE=recarnation
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data_dev:/data/db
       - ./backend/db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     restart: unless-stopped
     networks:
@@ -64,7 +58,7 @@ services:
       start_period: 40s
 
 volumes:
-  mongodb_data:
+  mongodb_data_dev:
     driver: local
 
 networks:

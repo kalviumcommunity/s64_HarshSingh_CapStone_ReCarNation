@@ -16,18 +16,18 @@ const Contact = () => {
             </div>
             <div>
               <h3 className="font-semibold mb-2">Email</h3>
-              <p className="text-gray-700">support@recarnation.com</p>
+              <p className="text-gray-700">kumharnaveen902@gmail.com</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2">Phone</h3>
-              <p className="text-gray-700">+1 (555) 123-4567</p>
+              <p className="text-gray-700">+91 90240 70654</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2">Address</h3>
               <p className="text-gray-700">
-                123 Automotive Way<br />
-                Detroit, MI 48201<br />
-                United States
+                Khachariawas <br />
+                Sikar, 332001<br />
+                Rajasthan, India
               </p>
             </div>
           </div>

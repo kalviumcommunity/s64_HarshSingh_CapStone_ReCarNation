@@ -61,6 +61,16 @@ app.get("/", (req, res)=>{
   res.send('Server is running');
 })
 
+// Health check endpoint for Docker
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+})
+
 app.listen(PORT, () => {
   console.log(`Server running on port http://localhost:${PORT}`);
 });

@@ -11,11 +11,16 @@ git checkout -b docker-support
 echo "${YELLOW}Adding Docker-related files...${NC}"
 git add \
     docker-compose.yml \
+    docker-compose.dev.yml \
     frontend/Dockerfile \
+    frontend/Dockerfile.dev \
     frontend/.dockerignore \
     frontend/nginx.conf \
     backend/Dockerfile \
+    backend/Dockerfile.dev \
     backend/.dockerignore \
+    backend/db/init-mongo.js \
+    .env.example \
     README.md
 
 echo "${YELLOW}Committing changes...${NC}"
