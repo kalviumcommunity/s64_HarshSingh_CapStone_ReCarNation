@@ -29,21 +29,28 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
-    // Log successful responses
-    console.log(`[${response.config.method.toUpperCase()}] ${response.config.url}:`, response.data);
     return response;
   },
   async (error) => {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+    const isAuthProbe = status === 401 && url.includes('/api/auth/me');
+
+    // `/api/auth/me` can return 401 for signed-out users; avoid noisy logs.
+    if (isAuthProbe) {
+      return Promise.reject(error);
+    }
+
     // Log errors
     console.error('API Error:', {
-      url: error.config?.url,
+      url,
       method: error.config?.method,
-      status: error.response?.status,
+      status,
       data: error.response?.data
     });
     
     // Handle 401 errors - redirect to login if needed
-    if (error.response?.status === 401) {
+    if (status === 401) {
       // You can add logout logic here if needed
       console.log('Authentication required');
     }

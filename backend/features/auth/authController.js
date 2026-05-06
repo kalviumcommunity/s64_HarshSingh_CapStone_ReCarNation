@@ -2,7 +2,10 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../../model/userModel");
 const { uploadToCloudinary } = require('../middleware/uploadMiddleware');
+const { cacheGet, cacheSet, cacheDel } = require('../../config/redis');
 const JWT_SECRET = process.env.JWT_SECRET;
+
+const USER_CACHE_TTL = 300; // 5 minutes
 
 // Signup
 exports.signup = async (req, res) => {
@@ -244,28 +247,34 @@ exports.deleteUser = async (req, res) => {
 // Get Current User
 exports.getCurrentUser = async (req, res) => {
   try {
-    // The user is already attached to the request by the isAuthenticated middleware
     const user = req.user;
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get the full user data from the database
+    const cacheKey = `user:${user.id}`;
+
+    // Try Redis cache first
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      return res.status(200).json({ user: cached, fromCache: true });
+    }
+
+    // Cache miss — fetch from DB
     const userData = await User.findById(user.id).select('-password');
-    
+
     if (!userData) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Return user data in the format expected by the frontend
     const formattedUser = {
       _id: userData._id,
       name: userData.name,
-      firstName: userData.name.split(' ')[0], // Assuming first name is the first part of the name
-      lastName: userData.name.split(' ').slice(1).join(' '), // Rest of the name as last name
+      firstName: userData.name.split(' ')[0],
+      lastName: userData.name.split(' ').slice(1).join(' '),
       email: userData.email,
-      photo: userData.profilePicture, // Map profilePicture to photo
+      photo: userData.profilePicture,
       profilePicture: userData.profilePicture,
       role: userData.role,
       isVerified: userData.isVerified,
@@ -273,6 +282,9 @@ exports.getCurrentUser = async (req, res) => {
       location: userData.location,
       bio: userData.bio
     };
+
+    // Populate cache
+    await cacheSet(cacheKey, formattedUser, USER_CACHE_TTL);
 
     res.status(200).json({ user: formattedUser });
   } catch (error) {
@@ -320,10 +332,6 @@ exports.updateRole = async (req, res) => {
 
 // Update Profile
 exports.updateProfile = async (req, res) => {
-  console.log('UPDATE PROFILE ENDPOINT HIT!');
-  console.log('Request body:', req.body);
-  console.log('User:', req.user);
-  
   try {
     const { name, email, profilePicture, bio, phone, location } = req.body;
     const userId = req.user._id;
@@ -336,7 +344,6 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
-    // Prepare update data
     const updateData = {};
     if (name) updateData.name = name;
     if (email) updateData.email = email.trim().toLowerCase();
@@ -355,7 +362,8 @@ exports.updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log('Updated user:', user);
+    // Invalidate user cache so next getCurrentUser fetch reflects new data
+    await cacheDel(`user:${userId}`);
 
     res.status(200).json({
       message: "Profile updated successfully",

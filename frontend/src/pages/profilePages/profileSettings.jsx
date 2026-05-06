@@ -24,6 +24,7 @@ const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -51,6 +52,9 @@ const ProfileSettings = () => {
       ...prev,
       [name]: value
     }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleImageChange = async (e) => {
@@ -89,7 +93,7 @@ const ProfileSettings = () => {
         toast.success('Profile picture updated successfully!');
         // Update user context if needed
         if (updateUser) {
-          updateUser(response.data.user);
+          updateUser(response.data.user || { profilePicture: response.data.profilePicture });
         }
       }
     } catch (error) {
@@ -103,20 +107,32 @@ const ProfileSettings = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setFieldErrors({});
 
     try {
+      const normalizedPhone = (formData.phone || '').replace(/[\s\-()]/g, '');
+      const locationParts = [
+        formData.address?.trim(),
+        formData.city?.trim(),
+        formData.state?.trim(),
+        formData.zipCode?.trim(),
+      ].filter(Boolean);
+
       // Map form data to backend expected format
       const profileData = {
         name: formData.name,
         email: formData.email,
-        phone: formData.phone,
-        location: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`.trim(),
+        phone: normalizedPhone,
+        location: locationParts.join(', '),
         profilePicture: imagePreview
       };
 
-      // Remove empty location
-      if (profileData.location === ', ,') {
+      // Remove empty optional fields
+      if (!profileData.location) {
         profileData.location = '';
+      }
+      if (!profileData.phone) {
+        delete profileData.phone;
       }
 
       const response = await axiosInstance.put(
@@ -131,7 +147,19 @@ const ProfileSettings = () => {
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+      const backendErrors = error.response?.data?.errors;
+      if (Array.isArray(backendErrors) && backendErrors.length > 0) {
+        const mapped = {};
+        backendErrors.forEach((item) => {
+          if (item?.field) mapped[item.field] = item.message;
+        });
+        setFieldErrors(mapped);
+        backendErrors.forEach((item) => {
+          if (item?.message) toast.error(`${item.field}: ${item.message}`);
+        });
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to update profile');
+      }
     } finally {
       setLoading(false);
     }
@@ -177,6 +205,7 @@ const ProfileSettings = () => {
             onChange={handleChange}
             required
           />
+          {fieldErrors.name && <p className="text-sm text-red-600">{fieldErrors.name}</p>}
         </div>
 
         <div className="space-y-2">
@@ -189,6 +218,7 @@ const ProfileSettings = () => {
             onChange={handleChange}
             required
           />
+          {fieldErrors.email && <p className="text-sm text-red-600">{fieldErrors.email}</p>}
         </div>
 
         <div className="space-y-2">
@@ -200,6 +230,7 @@ const ProfileSettings = () => {
             value={formData.phone}
             onChange={handleChange}
           />
+          {fieldErrors.phone && <p className="text-sm text-red-600">{fieldErrors.phone}</p>}
         </div>
 
         <div className="space-y-2">
@@ -210,6 +241,7 @@ const ProfileSettings = () => {
             value={formData.address}
             onChange={handleChange}
           />
+          {fieldErrors.location && <p className="text-sm text-red-600">{fieldErrors.location}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

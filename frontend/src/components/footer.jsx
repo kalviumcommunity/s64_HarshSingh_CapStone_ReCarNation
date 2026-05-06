@@ -38,10 +38,10 @@ const FooterLinkSection = ({ title, links }) => (
 );
 
 // Social media link component
-const SocialLink = ({ href, label, icon: Icon }) => (
+const SocialLink = ({ href, label, icon }) => (
   <a href={href} className="text-gray-300 hover:text-white" aria-label={label}>
     <span className="sr-only">{label}</span>
-    <Icon />
+    {icon()}
   </a>
 );
 

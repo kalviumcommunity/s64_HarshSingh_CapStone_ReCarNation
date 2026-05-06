@@ -19,7 +19,7 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Navbar = () => {
-  const { user: authUser, loading, logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
   const [heartHover, setHeartHover] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,7 +32,7 @@ const Navbar = () => {
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
 
-  // Debounced function to fetch Gemini AI suggestions
+  // Debounced function to fetch AI suggestions
   const fetchSuggestion = async (query) => {
     if (query.trim().length < 2) {
       setSuggestion('');
@@ -198,7 +198,7 @@ const Navbar = () => {
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="search"
-                placeholder="Search cars... (Gemini AI-powered)"
+                placeholder="Search cars... (AI-powered)"
                 value={searchTerm}
                 onChange={handleInputChange}
                 className="w-64 pl-4 pr-10 py-2 rounded-md border bg-[#F6F7FA] focus:ring-2 focus:ring-[#1EAEDB] transition"
@@ -229,7 +229,7 @@ const Navbar = () => {
                 >
                   <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0" />
                   <div className="flex-grow">
-                    <div className="text-xs text-gray-600 mb-1">Gemini AI Suggestion:</div>
+                    <div className="text-xs text-gray-600 mb-1">AI Suggestion:</div>
                     <div className="text-gray-900 font-medium text-sm">{suggestion}</div>
                   </div>
                 </div>

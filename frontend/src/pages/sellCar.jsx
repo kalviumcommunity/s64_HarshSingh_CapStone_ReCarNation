@@ -25,9 +25,8 @@ const SellCarPage = () => {
   const { user } = useContext(AuthContext);
   const [activeStep, setActiveStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -43,13 +42,6 @@ const SellCarPage = () => {
     images: []
   });
   const [errors, setErrors] = useState({});
-
-  // Cleanup function for image previews
-  const cleanup = useCallback(() => {
-    formData.images.forEach(img => {
-      URL.revokeObjectURL(img.preview);
-    });
-  }, [formData.images]);
 
   // Handle form field changes
   const handleChange = useCallback((e) => {
@@ -186,7 +178,6 @@ const SellCarPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
 
     if (!user) {
         toast.error('Please log in to create a listing');
@@ -204,7 +195,7 @@ const SellCarPage = () => {
         });
 
         // Append images
-        formData.images.forEach((img, index) => {
+        formData.images.forEach((img) => {
             formDataToSend.append('images', img.file);
         });
 
@@ -256,7 +247,6 @@ const SellCarPage = () => {
         if (err.response?.data?.details) {
             console.error('Server error details:', err.response.data.details);
         }
-        setError(errorMessage);
         toast.error(errorMessage);
     } finally {
         setIsSubmitting(false);

@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from './Header';
 import Footer from './footer';
+import AIAssistantWidget from './AIAssistantWidget';
 
 const Layout = ({ children }) => {
   return (
@@ -9,6 +10,7 @@ const Layout = ({ children }) => {
       <main className="flex-grow">
         {children}
       </main>
+      <AIAssistantWidget />
       <Footer />
     </div>
   );

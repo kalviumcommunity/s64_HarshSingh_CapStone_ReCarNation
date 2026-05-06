@@ -4,17 +4,15 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Package, Heart, Clock, Car, Warehouse, 
+  Package, Heart, Clock, Car,
   Settings, User, ChevronRight, Mail, 
-  Phone, LogOut, Trash2, AlertTriangle
+  LogOut, Trash2, AlertTriangle
 } from "lucide-react";
-import { useAuth } from '@/context/AuthContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function UserProfilePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [userData, setUserData] = useState({
     name: "",
     email: "",
@@ -48,7 +46,7 @@ function UserProfilePage() {
     };
     
     fetchUserProfile();
-  }, []);
+  }, [API_BASE_URL]);
 
   // Menu items - dynamic based on role
   const menuItems = [

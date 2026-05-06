@@ -102,48 +102,6 @@ const Authentication = () => {
     }
   };
 
-  const handleGoogleAuth = async () => {
-    try {
-      setIsLoading(true);
-      setError("");
-      
-      // Open Google OAuth popup
-      const popup = window.open(
-        `${API_BASE_URL}/api/auth/google`,
-        "Google Auth",
-        "width=600,height=600"
-      );
-
-      // Listen for message from popup
-      const messageHandler = async (event) => {
-        if (event.origin !== API_BASE_URL) return;
-
-        // Handle the auth success message
-        if (event.data.type === 'AUTH_SUCCESS' && event.data.user) {
-          // Store user data in auth context
-          await authLogin(event.data.user);
-          setSuccess("Login successful!");
-          
-          // Remove event listener
-          window.removeEventListener("message", messageHandler);
-          
-          // Navigate to home
-          setTimeout(() => {
-            navigate("/home");
-          }, 1500);
-        }
-        
-        setIsLoading(false);
-      };
-
-      // Add event listener for popup message
-      window.addEventListener("message", messageHandler);
-    } catch (err) {
-      setError(err.message || "Authentication failed. Please try again.");
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex">
       {/* Left Column - Form */}

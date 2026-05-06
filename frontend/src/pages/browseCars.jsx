@@ -3,12 +3,10 @@ import { CarCard } from '@/components/productCards';
 import FilterSidebar from '@/components/filter';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 const BrowseCarPage = () => {
-  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,7 +48,7 @@ const BrowseCarPage = () => {
       }
     };
     fetchMetadata();
-  }, []);
+  }, [API_BASE_URL]);
 
   // Update filters when search params change
   useEffect(() => {
@@ -101,7 +99,7 @@ const BrowseCarPage = () => {
     }, 500);
 
     return () => clearTimeout(debounceTimeout);
-  }, [filters, metadata]);
+  }, [filters, metadata, API_BASE_URL]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
@@ -159,4 +157,3 @@ const BrowseCarPage = () => {
 };
 
 export default BrowseCarPage;
-

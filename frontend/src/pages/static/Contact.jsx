@@ -15,18 +15,18 @@ const Contact = () => {
             </div>
             <div>
               <h3 className="font-semibold mb-2">Email</h3>
-              <p className="text-gray-700">kumharnaveen902@gmail.com</p>
+              <p className="text-gray-700">support@recar-nation.com</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2">Phone</h3>
-              <p className="text-gray-700">+91 90240 70654</p>
+              <p className="text-gray-700">+91 00000 00000</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2">Address</h3>
               <p className="text-gray-700">
-                Khachariawas <br />
-                Sikar, 332001<br />
-                Rajasthan, India
+                123 Andheri Street <br />
+                Mumbai, 000000<br />
+                India
               </p>
             </div>
           </div>

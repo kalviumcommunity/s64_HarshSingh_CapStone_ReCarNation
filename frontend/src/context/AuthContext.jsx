@@ -1,8 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axiosInstance from '@/lib/axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 export const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -20,24 +18,21 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      console.log('Checking auth status...');
       const response = await axiosInstance.get('/api/auth/me');
-
-      
       if (response.data && response.data.user) {
         const userData = {
           ...response.data.user,
           photo: response.data.user.photo || "https://via.placeholder.com/32"
         };
-        console.log('Setting user data:', userData);
         setUser(userData);
       } else {
-        console.log('No user data found');
         setUser(null);
-
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      // Unauthenticated user is a valid state during initial app load.
+      if (error.response?.status !== 401) {
+        console.error('Auth check failed:', error);
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -102,9 +97,12 @@ export const AuthProvider = ({ children }) => {
   const updateUser = (userData) => {
     try {
       console.log('Updating user data:', userData);
+      if (!userData || typeof userData !== 'object') {
+        return user;
+      }
       const formattedUser = {
         ...userData,
-        photo: userData.photo || userData.profilePicture || "https://via.placeholder.com/32"
+        photo: userData.photo || userData.profilePicture || user?.photo || "https://via.placeholder.com/32"
       };
       setUser(prev => ({
         ...prev,
