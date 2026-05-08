@@ -48,17 +48,24 @@ const isInScopeQuestion = (text) => {
 
 const shouldFallback = (error) => {
   const status = error?.response?.status || error?.status;
-  return !status || status >= 500 || status === 429 || status === 408 || error?.code === 'ECONNABORTED';
+  // Fallback for: 
+  // - No status (network error)
+  // - 5xx (server error)
+  // - 401/403 (invalid/placeholder key)
+  // - 429 (rate limit)
+  // - 408/Timeout
+  return !status || status >= 500 || status === 401 || status === 403 || status === 429 || status === 408 || error?.code === 'ECONNABORTED';
 };
 
 const callGemini = async (messages) => {
-  if (!process.env.GEMINI_API_KEY) {
-    const err = new Error('Gemini API key not configured');
-    err.status = 500;
+  const key = process.env.GEMINI_API_KEY;
+  if (!key || key === 'your_gemini_api_key_here') {
+    const err = new Error('Gemini API key not configured or is placeholder');
+    err.status = 503; 
     throw err;
   }
 
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const genAI = new GoogleGenerativeAI(key);
   const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
   const prompt = messages
@@ -108,11 +115,13 @@ const callGroq = async (messages) => {
   return text;
 };
 
+
+
 const callWithFallback = async (messages) => {
   try {
     return await callGemini(messages);
   } catch (geminiError) {
-    console.error('Gemini call failed:', geminiError.response?.data || geminiError.message || geminiError);
+    console.error('Gemini call failed, attempting fallback to Groq:', geminiError.message);
 
     if (!shouldFallback(geminiError) && process.env.GROQ_FORCE_FALLBACK !== 'true') {
       throw geminiError;
