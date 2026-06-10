@@ -44,17 +44,17 @@ const upload = multer({
     }
 });
 
+const { cloudinaryQueue, cloudinaryQueueEvents } = require('../../queues/queueManager');
+
 // Helper function to upload to Cloudinary
 const uploadToCloudinary = async (file, folder = 'profile-pictures') => {
     try {
-        const result = await cloudinary.uploader.upload(file.path, {
-            folder: folder,
-            resource_type: 'image'
+        const job = await cloudinaryQueue.add('upload', {
+            filePath: file.path,
+            folder
         });
         
-        // Clean up local file after successful upload
-        fs.unlinkSync(file.path);
-        
+        const result = await job.waitUntilFinished(cloudinaryQueueEvents);
         return result;
     } catch (error) {
         // Clean up local file if upload fails

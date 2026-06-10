@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const User = require("../../model/userModel");
 const { uploadToCloudinary } = require('../middleware/uploadMiddleware');
 const { cacheGet, cacheSet, cacheDel } = require('../../config/redis');

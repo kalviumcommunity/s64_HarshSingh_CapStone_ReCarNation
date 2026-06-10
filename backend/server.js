@@ -1,18 +1,199 @@
 require('dotenv').config();
+const cluster = require('cluster');
+const os = require('os');
+
+const isProduction = process.env.NODE_ENV === 'production';
+const enableCluster = process.env.CLUSTER_MODE === 'true' || (isProduction && process.env.CLUSTER_MODE !== 'false');
+
+if (enableCluster && cluster.isPrimary) {
+  const numCPUs = process.env.CLUSTER_WORKERS ? parseInt(process.env.CLUSTER_WORKERS, 10) : (os.availableParallelism ? os.availableParallelism() : os.cpus().length);
+  console.log(`[Primary ${process.pid}] Master cluster process running on ${process.env.NODE_ENV || 'development'} environment.`);
+  console.log(`[Primary ${process.pid}] Forking ${numCPUs} worker processes...`);
+
+  // Active workers map to track heartbeats
+  const workers = new Map();
+
+  // Helper to spawn a worker and setup events
+  const spawnWorker = () => {
+    const worker = cluster.fork();
+    workers.set(worker.id, {
+      worker,
+      pid: worker.process.pid,
+      spawnTime: Date.now(),
+      lastActive: Date.now(),
+      missedPings: 0,
+      isReady: false
+    });
+
+    worker.on('message', (msg) => {
+      if (msg) {
+        if (msg.type === 'ready') {
+          const workerInfo = workers.get(worker.id);
+          if (workerInfo) {
+            console.log(`[Primary] Worker ${workerInfo.pid} completed startup and is ready.`);
+            workerInfo.isReady = true;
+            workerInfo.lastActive = Date.now();
+            workerInfo.missedPings = 0;
+          }
+        } else if (msg.type === 'pong') {
+          const workerInfo = workers.get(worker.id);
+          if (workerInfo) {
+            console.log(`[Primary] Received pong from worker ${workerInfo.pid}. Resetting missed pings.`);
+            workerInfo.lastActive = Date.now();
+            workerInfo.missedPings = 0;
+
+            if (msg.memory && (msg.memory / 1024 / 1024) > 250) {
+              console.warn(`[Primary] Worker ${workerInfo.pid} exceeded memory limit (${Math.round(msg.memory / 1024 / 1024)}MB). Recycling...`);
+              workers.delete(worker.id);
+              worker.kill('SIGTERM'); // Graceful
+              spawnWorker();
+            }
+          }
+        }
+      }
+    });
+
+    return worker;
+  };
+
+  // Fork initial workers
+  for (let i = 0; i < numCPUs; i++) {
+    spawnWorker();
+  }
+
+  // Handle worker exits and restart them
+  cluster.on('exit', (worker, code, signal) => {
+    console.warn(`[Primary] Worker process ${worker.process.pid} (ID: ${worker.id}) exited (code: ${code}, signal: ${signal}).`);
+    workers.delete(worker.id);
+
+    if (!worker.exitedAfterDisconnect) {
+      console.log('[Primary] Spawning replacement worker in 2 seconds...');
+      setTimeout(() => {
+        spawnWorker();
+      }, 2000);
+    }
+  });
+
+  // Event loop deadlock detection (Heartbeat mechanism)
+  // Sends a ping every 10 seconds. If a worker fails to respond to 3 consecutive pings, it is considered deadlocked/frozen and is forcefully killed.
+  const HEARTBEAT_INTERVAL = 10000; // 10s
+  const MAX_MISSED_PINGS = 3;
+
+  const heartbeatTimer = setInterval(() => {
+    workers.forEach((workerInfo, id) => {
+      const { worker, pid, isReady } = workerInfo;
+      
+      // If the worker has disconnected, skip
+      if (worker.state === 'disconnected') return;
+
+      // Skip health checks until the worker notifies it has bound to the port and is ready
+      if (!isReady) {
+        console.log(`[Primary] Worker ${pid} is still loading modules & connecting to database. Skipping health check.`);
+        return;
+      }
+
+      workerInfo.missedPings++;
+      console.log(`[Primary] Sending heartbeat ping to worker ${pid} (missed: ${workerInfo.missedPings - 1})...`);
+
+      if (workerInfo.missedPings > MAX_MISSED_PINGS) {
+        console.error(`[Primary] Worker ${pid} (ID: ${id}) failed to respond to ${MAX_MISSED_PINGS} consecutive heartbeat pings (Deadlock/Blocked event loop detected). Killing worker...`);
+        // Remove worker from map first to prevent any race condition
+        workers.delete(id);
+        // Forcefully terminate the worker process
+        worker.kill('SIGKILL');
+        // Spawn a replacement worker immediately
+        console.log(`[Primary] Spawning replacement worker for frozen worker ${pid}...`);
+        spawnWorker();
+      } else {
+        // Send ping message to worker
+        try {
+          worker.send({ type: 'ping' });
+        } catch (err) {
+          console.error(`[Primary] Failed to send ping to worker ${pid}:`, err.message);
+        }
+      }
+    });
+  }, HEARTBEAT_INTERVAL);
+
+  // Clean up on process termination
+  process.on('SIGTERM', () => {
+    console.log('[Primary] SIGTERM received. Terminating all workers gracefully...');
+    clearInterval(heartbeatTimer);
+    let activeWorkers = workers.size;
+
+    if (activeWorkers === 0) {
+      process.exit(0);
+    }
+
+    workers.forEach(({ worker }) => {
+      worker.kill('SIGTERM');
+      worker.on('exit', () => {
+        activeWorkers--;
+        if (activeWorkers === 0) {
+          console.log('[Primary] All workers terminated. Exiting...');
+          process.exit(0);
+        }
+      });
+    });
+  });
+
+  // Initialize BullMQ workers strictly in the primary process
+  const { initWorkers } = require('./queues/queueManager');
+  initWorkers();
+  console.log('[Primary] BullMQ workers initialized.');
+
+  return; // Stop execution of the rest of the file for the primary process
+}
+
+// Single process mode (if cluster is not enabled)
+if (!enableCluster) {
+  const { initWorkers } = require('./queues/queueManager');
+  initWorkers();
+  console.log('[Worker] BullMQ workers initialized in single-process mode.');
+}
+
+// -------------------------------------------------------------
+// WORKER PROCESS CODE (OR SINGLE PROCESS MODE)
+// -------------------------------------------------------------
+// Set up listener for heartbeats from Primary process
+if (cluster.isWorker) {
+  process.on('message', (msg) => {
+    if (msg && msg.type === 'ping') {
+      try {
+        process.send({ type: 'pong', memory: process.memoryUsage().rss });
+      } catch (err) {
+        // Ignored if channel is closed
+      }
+    }
+  });
+}
+
+console.log('Requiring express...');
 const express = require('express');
+console.log('Requiring helmet...');
 const helmet = require('helmet');
+console.log('Requiring passport...');
 const passport = require('passport');
 // Import passport configuration with GoogleStrategy
+console.log('Requiring passport config...');
 require('./features/auth/authMiddleware/passport');
+console.log('Requiring cookie parser...');
 const cookieParser = require('cookie-parser');
+console.log('Requiring cors...');
 const cors = require('cors');
+console.log('Requiring session...');
 const session = require('express-session');
 
+console.log('Requiring connectDB...');
 const connectDB = require('./db/database');
+console.log('Requiring authRoutes...');
 const authRoutes = require('./features/auth/authRoutes');
+console.log('Requiring sanitize...');
 const { mongoSanitizeMiddleware, xssSanitizeMiddleware } = require('./features/middleware/sanitize');
+console.log('Requiring rateLimiter...');
 const { apiLimiter, authLimiter, uploadLimiter } = require('./features/middleware/rateLimiter');
 
+console.log('Initializing express app...');
 const app = express();
 
 // ─── Security Headers ──────────────────────────────────────────────────────
@@ -43,10 +224,18 @@ app.use(mongoSanitizeMiddleware);
 app.use(xssSanitizeMiddleware);
 
 // ─── Session (for Passport OAuth flow) ────────────────────────────────────
+// Using MongoStore for shared session storage across multiple clustered workers
+console.log('Requiring connect-mongo...');
+const MongoStore = require('connect-mongo').default || require('connect-mongo');
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false, // Recommended to be false when using database session stores to prevent saving empty sessions
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URL,
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60, // Session TTL: 24 hours
+  }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -62,6 +251,7 @@ app.use(passport.session());
 // General API limit — applies to all /api/* routes
 app.use('/api/', apiLimiter);
 
+console.log('Requiring other routes...');
 const productRoutes = require('./features/products/productsRoutes');
 const wishlistRoutes = require('./features/wishlist/wishlistRoutes');
 const verificationRoutes = require('./features/auth/verificationRoutes');
@@ -70,6 +260,7 @@ const paymentRoutes = require('./features/payments/paymentRoutes');
 const autocompleteRoutes = require('./features/autocomplete/autocompleteRoutes');
 
 const PORT = process.env.PORT || 3001;
+console.log('Connecting to DB...');
 connectDB();
 
 // ─── Routes ────────────────────────────────────────────────────────────────
@@ -235,6 +426,40 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  if (process.send) {
+    process.send({ type: 'ready' });
+  }
 });
+
+if (cluster.isWorker) {
+  process.on('SIGTERM', () => {
+    console.log(`[Worker ${process.pid}] SIGTERM received. Shutting down gracefully...`);
+    server.close(async () => {
+      console.log(`[Worker ${process.pid}] HTTP server closed.`);
+      try {
+        const mongoose = require('mongoose');
+        if (mongoose.connection.readyState === 1) {
+          await mongoose.connection.close(false);
+          console.log(`[Worker ${process.pid}] MongoDB connection closed.`);
+        }
+        const { getRedisClient } = require('./config/redis');
+        const redis = getRedisClient();
+        if (redis) {
+          await redis.quit();
+          console.log(`[Worker ${process.pid}] Redis connection closed.`);
+        }
+        process.exit(0);
+      } catch (err) {
+        console.error(`[Worker ${process.pid}] Error during shutdown:`, err);
+        process.exit(1);
+      }
+    });
+
+    setTimeout(() => {
+      console.error(`[Worker ${process.pid}] Forceful shutdown after timeout`);
+      process.exit(1);
+    }, 10000);
+  });
+}
